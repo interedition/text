@@ -20,7 +20,7 @@ public class JacksonDataMapper<T> implements DataMapper<T> {
     }
 
     @Override
-    public void map(T data, OutputStream stream) throws IOException {
+    public void serialize(T data, OutputStream stream) throws IOException {
         final JsonGenerator jg = this.objectMapper.getJsonFactory().createJsonGenerator(stream);
         jg.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         try {
@@ -31,7 +31,7 @@ public class JacksonDataMapper<T> implements DataMapper<T> {
     }
 
     @Override
-    public T unmap(InputStream stream, Class<T> type) throws IOException {
+    public T deserialize(InputStream stream, Class<T> type) throws IOException {
         final JsonParser jp = this.objectMapper.getJsonFactory().createJsonParser(stream);
         jp.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
         try {

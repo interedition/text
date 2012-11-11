@@ -29,5 +29,5 @@ public interface Layer<T> extends Named, Text {
 
     Set<Anchor> getAnchors();
 
-    T data(Class<T> type);
+    T data();
 }

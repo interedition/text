@@ -50,7 +50,7 @@ public class SimpleLayer<T> implements Layer<T> {
     }
 
     @Override
-    public T data(Class<T> type) {
+    public T data() {
         return data;
     }
 

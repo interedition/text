@@ -12,7 +12,7 @@ import java.io.OutputStream;
 public class SerializableDataMapper<T> implements DataMapper<T> {
 
     @Override
-    public void map(T data, OutputStream stream) throws IOException {
+    public void serialize(T data, OutputStream stream) throws IOException {
         final ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
         objectStream.flush();
@@ -20,7 +20,7 @@ public class SerializableDataMapper<T> implements DataMapper<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T unmap(InputStream stream, Class<T> type) throws IOException {
+    public T deserialize(InputStream stream, Class<T> type) throws IOException {
         final ObjectInputStream objectStream = new ObjectInputStream(stream);
         try {
             return (T) objectStream.readObject();

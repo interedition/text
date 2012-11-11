@@ -32,12 +32,14 @@ public class LayerRelation<T> implements Layer<T> {
 
     private final Name name;
     private final Set<Anchor> anchors;
+    private final T data;
     private final long id;
     private final H2TextRepository<T> repository;
 
-    public LayerRelation(Name name, Set<Anchor> anchors, long id, H2TextRepository<T> repository) {
+    public LayerRelation(Name name, Set<Anchor> anchors, T data, long id, H2TextRepository<T> repository) {
         this.name = name;
         this.anchors = anchors;
+        this.data = data;
         this.id = id;
         this.repository = repository;
     }
@@ -91,7 +93,10 @@ public class LayerRelation<T> implements Layer<T> {
 
 
     @Override
-    public T data(Class<T> type) {
+    public T data() {
+        if (data != null) {
+            return data;
+        }
         Connection connection = null;
         PreparedStatement query = null;
         ResultSet resultSet = null;
@@ -107,7 +112,7 @@ public class LayerRelation<T> implements Layer<T> {
             if (dataBlob != null) {
                 InputStream dataStream = null;
                 try {
-                    result = repository.data(dataStream = dataBlob.getBinaryStream(), type);
+                    result = repository.data(dataStream = dataBlob.getBinaryStream());
                 } finally {
                     Closeables.close(dataStream, false);
                 }
@@ -127,41 +132,33 @@ public class LayerRelation<T> implements Layer<T> {
 
     @Override
     public SortedMap<TextRange, String> read(final SortedSet<TextRange> textRanges) {
-        try {
-            return withTextClob(new ClobCallback<SortedMap<TextRange, String>>() {
-                @Override
-                public SortedMap<TextRange, String> withClob(Clob text) throws IOException, SQLException {
-                    final SortedMap<TextRange, String> result = Maps.newTreeMap();
-                    for (TextRange range : textRanges) {
-                        result.put(range, text.getSubString(range.getStart() + 1, (int) range.length()));
-                    }
-                    return result;
+        return withTextClob(new ClobCallback<SortedMap<TextRange, String>>() {
+            @Override
+            public SortedMap<TextRange, String> withClob(Clob text) throws IOException, SQLException {
+                final SortedMap<TextRange, String> result = Maps.newTreeMap();
+                for (TextRange range : textRanges) {
+                    result.put(range, text.getSubString(range.getStart() + 1, (int) range.length()));
                 }
-            });
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
+                return result;
+            }
+        });
     }
 
     @Override
     public long length() {
-        try {
-            return withTextClob(new ClobCallback<Long>() {
-                @Override
-                public Long withClob(Clob text) throws IOException, SQLException {
-                    return text.length();
-                }
-            });
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
+        return withTextClob(new ClobCallback<Long>() {
+            @Override
+            public Long withClob(Clob text) throws IOException, SQLException {
+                return text.length();
+            }
+        });
     }
 
     private interface ClobCallback<R> {
         R withClob(Clob text) throws IOException, SQLException;
     }
 
-    private <R> R withTextClob(ClobCallback<R> callback) throws IOException {
+    private <R> R withTextClob(ClobCallback<R> callback) {
         Connection connection = null;
         PreparedStatement query = null;
         ResultSet resultSet = null;
@@ -177,6 +174,8 @@ public class LayerRelation<T> implements Layer<T> {
             repository.commit(connection);
             return result;
         } catch (SQLException e) {
+            throw repository.rollbackAndConvert(connection, e);
+        } catch (IOException e) {
             throw repository.rollbackAndConvert(connection, e);
         } finally {
             SQL.closeQuietly(resultSet);

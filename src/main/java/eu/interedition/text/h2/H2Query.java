@@ -6,6 +6,7 @@ import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
@@ -13,7 +14,10 @@ import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,7 +37,7 @@ public class H2Query<T> {
     public Layer<T> byId(H2TextRepository<T> repository, long id) {
         QueryResult<T> results = null;
         try {
-            return Iterables.getOnlyElement(results(repository, Query.is(new LayerRelation<T>(null, null, id, repository))));
+            return Iterables.getOnlyElement(results(repository, Query.is(new LayerRelation<T>(null, null, null, id, repository))));
         } finally {
             SQL.closeQuietly(results);
         }
@@ -47,7 +51,7 @@ public class H2Query<T> {
         clause.joins(joins, 0);
         clause.clauses(clauses);
 
-        return "SELECT l.id, n.ns, n.ln, n.id, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end" +
+        return "SELECT l.id, n.ns, n.ln, n.id, l.layer_data, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end" +
                 " FROM interedition_text_layer l" +
                 " JOIN interedition_name n ON n.id = l.name_id" +
                 " LEFT JOIN interedition_text_anchor a ON a.from_id = l.id" +
@@ -84,14 +88,24 @@ public class H2Query<T> {
                                     final long layerId = resultSet.getLong(1);
                                     if (layer == null || layer.getId() != layerId) {
                                         result = layer;
-                                        layer = new LayerRelation<T>(new NameRelation(resultSet.getString(2), resultSet.getString(3), resultSet.getLong(4)), anchors = Sets.newHashSet(), layerId, repository);
+                                        T data = null;
+                                        final Blob dataBlob = resultSet.getBlob(5);
+                                        if (dataBlob != null) {
+                                            InputStream dataStream = null;
+                                            try {
+                                                data = repository.data(dataStream = dataBlob.getBinaryStream());
+                                            } finally {
+                                                Closeables.close(dataStream, false);
+                                            }
+                                        }
+                                        layer = new LayerRelation<T>(new NameRelation(resultSet.getString(2), resultSet.getString(3), resultSet.getLong(4)), anchors = Sets.newHashSet(), data, layerId, repository);
                                     }
                                     if (resultSet.isLast()) {
                                         result = layer;
                                     }
-                                    final NameRelation targetName = new NameRelation(resultSet.getString(5), resultSet.getString(6), resultSet.getLong(7));
-                                    final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), resultSet.getLong(8), repository);
-                                    final TextRange targetRange = new TextRange(resultSet.getLong(9), resultSet.getLong(10));
+                                    final NameRelation targetName = new NameRelation(resultSet.getString(6), resultSet.getString(7), resultSet.getLong(8));
+                                    final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), null, resultSet.getLong(9), repository);
+                                    final TextRange targetRange = new TextRange(resultSet.getLong(10), resultSet.getLong(11));
                                     anchors.add(new Anchor(target, targetRange));
 
                                     if (result != null) {
@@ -106,6 +120,8 @@ public class H2Query<T> {
                                 }
                                 return result;
                             } catch (SQLException e) {
+                                throw repository.rollbackAndConvert(connection, e);
+                            } catch (IOException e) {
                                 throw repository.rollbackAndConvert(connection, e);
                             }
                         }

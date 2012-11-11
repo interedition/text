@@ -33,7 +33,7 @@ public class ChangeAdapter {
             return changeSetRef;
         }
 
-        final KeyValues data = annotation.data(KeyValues.class);
+        final KeyValues data = annotation.data();
         if (data != null && data.containsKey(CHANGE_SET_REF)) {
             changeSetRef = data.get(CHANGE_SET_REF).toString().replaceAll("^#", "");
         }
@@ -49,7 +49,7 @@ public class ChangeAdapter {
         if (revisionType != null) {
             return revisionType;
         }
-        final KeyValues data = annotation.data(KeyValues.class);
+        final KeyValues data = annotation.data();
         if (data != null && data.containsKey(REVISION_TYPE)) {
             revisionType = data.get(REVISION_TYPE).toString();
         }

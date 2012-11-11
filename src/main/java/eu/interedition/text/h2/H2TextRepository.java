@@ -40,6 +40,7 @@ import javax.sql.DataSource;
  */
 public class H2TextRepository<T> implements TextRepository<T> {
 
+    private final Class<T> dataType;
     private final DataSource ds;
     private final boolean transactional;
 
@@ -47,11 +48,12 @@ public class H2TextRepository<T> implements TextRepository<T> {
     private final H2Query<T> query = new H2Query<T>();
     private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
 
-    public H2TextRepository(DataSource ds) {
-        this(ds, true);
+    public H2TextRepository(Class<T> dataType, DataSource ds) {
+        this(dataType, ds, true);
     }
 
-    public H2TextRepository(DataSource ds, boolean transactional) {
+    public H2TextRepository(Class<T> dataType, DataSource ds, boolean transactional) {
+        this.dataType = dataType;
         this.ds = ds;
         this.transactional = transactional;
     }
@@ -137,7 +139,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
                 final Blob dataBlob = connection.createBlob();
                 OutputStream dataStream = null;
                 try {
-                    dataMapper.map(data, dataStream = dataBlob.setBinaryStream(1));
+                    dataMapper.serialize(data, dataStream = dataBlob.setBinaryStream(1));
                 } finally {
                     Closeables.close(dataStream, false);
                 }
@@ -168,7 +170,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
 
             commit(connection);
 
-            return new LayerRelation<T>(name, anchors, id, this);
+            return new LayerRelation<T>(name, anchors, null, id, this);
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
@@ -237,21 +239,17 @@ public class H2TextRepository<T> implements TextRepository<T> {
         }
     }
 
-    RuntimeException rollbackAndConvert(Connection connection, SQLException e) {
+    RuntimeException rollbackAndConvert(Connection connection, Throwable t) {
         if (connection != null && transactional) {
             try {
                 connection.rollback();
             } catch (SQLException e1) {
             }
         }
-        return Throwables.propagate(e);
+        return Throwables.propagate(t);
     }
 
-    public T data(InputStream stream, Class<T> type) {
-        try {
-            return dataMapper.unmap(stream, type);
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
+    public T data(InputStream stream) throws IOException {
+        return dataMapper.deserialize(stream, dataType);
     }
 }

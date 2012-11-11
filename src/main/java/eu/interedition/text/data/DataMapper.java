@@ -9,7 +9,7 @@ import java.io.OutputStream;
  */
 public interface DataMapper<T> {
 
-    void map(T data, OutputStream stream) throws IOException;
+    void serialize(T data, OutputStream stream) throws IOException;
 
-    T unmap(InputStream stream, Class<T> type) throws IOException;
+    T deserialize(InputStream stream, Class<T> type) throws IOException;
 }

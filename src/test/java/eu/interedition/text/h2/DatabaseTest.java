@@ -45,7 +45,7 @@ public class DatabaseTest extends AbstractTest {
                 url.append(";TRACE_LEVEL_SYSTEM_OUT=2");
             }
             ds = new SingleConnectionDataSource(JdbcConnectionPool.create(url.toString(), "sa", "sa"));
-            repository = new H2TextRepository<KeyValues>(ds, false).withSchema();
+            repository = new H2TextRepository<KeyValues>(KeyValues.class, ds, false).withSchema();
         }
         return repository;
     }

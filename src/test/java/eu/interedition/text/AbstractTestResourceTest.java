@@ -282,7 +282,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         @Override
         public Map<Name, String> extractAttributes(Layer<KeyValues> layer) {
             final Map<Name, String> attributes = Maps.newHashMap();
-            for (Map.Entry<String, Object> kv : layer.data(KeyValues.class).entrySet()) {
+            for (Map.Entry<String, Object> kv : layer.data().entrySet()) {
                 attributes.put(Name.fromString(kv.getKey()), kv.getValue().toString());
             }
             return attributes;
@@ -290,7 +290,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
 
         @Override
         public XMLNodePath extractXMLNodePath(Layer<KeyValues> layer) {
-            final Object xmlNode = layer.data(KeyValues.class).get(TextConstants.XML_NODE_ATTR_NAME.toString());
+            final Object xmlNode = layer.data().get(TextConstants.XML_NODE_ATTR_NAME.toString());
             return (xmlNode == null || xmlNode instanceof XMLNodePath) ? (XMLNodePath) xmlNode : XMLNodePath.fromString(xmlNode.toString());
         }
     }
