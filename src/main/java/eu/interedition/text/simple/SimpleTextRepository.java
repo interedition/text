@@ -78,6 +78,7 @@ public class SimpleTextRepository<T> implements TextRepository<T> {
         public void close() throws Exception {
         }
     }
+
     private final Function<Query, Predicate<Layer<T>>> TO_PREDICATE = new Function<Query, Predicate<Layer<T>>>() {
         @SuppressWarnings("unchecked")
         @Override
@@ -107,8 +108,9 @@ public class SimpleTextRepository<T> implements TextRepository<T> {
         }
     };
 
-    void write(Layer<T> target, Reader text) throws IOException {
-        ((SimpleLayer<T>)target).text = CharStreams.toString(text);
+    @Deprecated
+    public void updateText(Layer<T> target, Reader text) throws IOException {
+        ((SimpleLayer<T>) target).text = CharStreams.toString(text);
     }
 
     public static class AnyAnchorPredicate<T> implements Predicate<Layer<T>> {

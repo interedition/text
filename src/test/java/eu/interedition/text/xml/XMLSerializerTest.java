@@ -26,10 +26,9 @@ import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
-import eu.interedition.text.simple.KeyValues;
+import eu.interedition.text.TextConstants;
 import java.io.PrintStream;
 import java.net.URI;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,34 +62,27 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
 
         repository.delete(repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0))));
 
-        XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfiguration<KeyValues>() {
+        XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {
+
+            @Override
             public Name getRootName() {
-                return null;
+                return new Name(TextConstants.INTEREDITION_NS_URI, "text");
             }
 
             public Map<String, URI> getNamespaceMappings() {
-                return Maps.newHashMap();
+                final HashMap<String, URI> nsMap = Maps.newHashMap();
+                nsMap.put("", TEI_NS);
+                nsMap.put("ie", TextConstants.INTEREDITION_NS_URI);
+                nsMap.put(TextConstants.CLIX_NS_PREFIX, TextConstants.CLIX_NS);
+                return nsMap;
             }
 
+            @Override
             public List<Name> getHierarchy() {
                 return Lists.newArrayList(
                         new Name(null, "phr"),
                         new Name(null, "s")
                 );
-            }
-
-            public Query getQuery() {
-                return Query.any();
-            }
-
-            @Override
-            public Map<Name, String> extractAttributes(Layer<KeyValues> layer) {
-                return Collections.emptyMap(); // FIXME
-            }
-
-            @Override
-            public XMLNodePath extractXMLNodePath(Layer<KeyValues> layer) {
-                return null; // FIXME
             }
         });
 
@@ -103,7 +95,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
     public void teiConversion() throws Exception {
         final Layer testLayer = text("george-algabal-tei.xml");
         repository.delete(repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0))));
-        XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfiguration<KeyValues>() {
+        XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {
             public Name getRootName() {
                 return new Name(TEI_NS, "text");
             }
@@ -111,9 +103,11 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
             public Map<String, URI> getNamespaceMappings() {
                 final HashMap<String, URI> nsMap = Maps.newHashMap();
                 nsMap.put("", TEI_NS);
+                nsMap.put(TextConstants.CLIX_NS_PREFIX, TextConstants.CLIX_NS);
                 return nsMap;
             }
 
+            @Override
             public List<Name> getHierarchy() {
                 return Lists.newArrayList(
                         new Name(TEI_NS, "page"),
@@ -128,15 +122,6 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
                 );
             }
 
-            @Override
-            public Map<Name, String> extractAttributes(Layer<KeyValues> layer) {
-                return Collections.emptyMap(); // FIXME
-            }
-
-            @Override
-            public XMLNodePath extractXMLNodePath(Layer<KeyValues> layer) {
-                return null; // FIXME
-            }
         });
 
         if (LOG.isLoggable(Level.FINE)) {

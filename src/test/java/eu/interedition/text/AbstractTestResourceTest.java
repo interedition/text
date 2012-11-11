@@ -26,9 +26,11 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import eu.interedition.text.simple.KeyValues;
 import eu.interedition.text.simple.SimpleTextRepository;
-import eu.interedition.text.simple.SimpleXMLTransformerConfiguration;
 import eu.interedition.text.xml.XML;
+import eu.interedition.text.xml.XMLNodePath;
+import eu.interedition.text.xml.XMLSerializerConfiguration;
 import eu.interedition.text.xml.XMLTransformer;
+import eu.interedition.text.xml.XMLTransformerConfigurationBase;
 import eu.interedition.text.xml.XMLTransformerModule;
 import eu.interedition.text.xml.module.CLIXAnnotationXMLTransformerModule;
 import eu.interedition.text.xml.module.DefaultAnnotationXMLTransformerModule;
@@ -38,6 +40,7 @@ import eu.interedition.text.xml.module.TEIAwareAnnotationXMLTransformerModule;
 import eu.interedition.text.xml.module.TextXMLTransformerModule;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
@@ -60,6 +63,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import static eu.interedition.text.TextConstants.TEI_NS;
+import static eu.interedition.text.TextConstants.XML_TRANSFORM_NAME;
 
 /**
  * Base class for tests working with documents generated from XML test resources.
@@ -131,7 +135,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         return Lists.newArrayList();
     }
 
-    SimpleXMLTransformerConfiguration<KeyValues> configure(SimpleXMLTransformerConfiguration<KeyValues> pc) {
+    XMLTransformerConfigurationBase<KeyValues> configure(XMLTransformerConfigurationBase<KeyValues> pc) {
         pc.addLineElement(new Name(TEI_NS, "div"));
         pc.addLineElement(new Name(TEI_NS, "head"));
         pc.addLineElement(new Name(TEI_NS, "sp"));
@@ -158,8 +162,8 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         return pc;
     }
 
-    SimpleXMLTransformerConfiguration<KeyValues> createXMLParserConfiguration() {
-        SimpleXMLTransformerConfiguration<KeyValues> pc = new SimpleXMLTransformerConfiguration<KeyValues>((SimpleTextRepository<KeyValues>) repository);
+    XMLTransformerConfigurationBase<KeyValues> createXMLParserConfiguration() {
+        XMLTransformerConfigurationBase<KeyValues> pc = new XMLTransformerConfiguration();
 
         final List<XMLTransformerModule<KeyValues>> modules = pc.getModules();
         modules.add(new LineElementXMLTransformerModule<KeyValues>());
@@ -202,7 +206,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
                 }
 
                 if (LOG.isLoggable(Level.FINE)) {
-                    LOG.log(Level.FINE, "{0} parsed in {1}", new Object[]{resource, stopWatch });
+                    LOG.log(Level.FINE, "{0} parsed in {1}", new Object[]{resource, stopWatch});
                 }
             }
         } catch (Exception e) {
@@ -221,5 +225,68 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
     synchronized void unload(URI resource) throws IOException {
         repository.delete(Collections.singleton(texts.remove(resource)));
         repository.delete(Collections.singleton(sources.remove(resource)));
+    }
+
+    protected class XMLTransformerConfiguration extends XMLTransformerConfigurationBase<KeyValues> {
+
+        @Override
+        public Layer<KeyValues> targetFor(Layer source) {
+            try {
+                return repository.add(XML_TRANSFORM_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
+            } catch (IOException e) {
+                throw Throwables.propagate(e);
+            }
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public void write(Layer<KeyValues> target, Reader text) throws IOException {
+            try {
+                ((SimpleTextRepository<KeyValues>) repository).updateText(target, text);
+            } catch (IOException e) {
+                throw Throwables.propagate(e);
+            }
+        }
+
+        @Override
+        public Layer<KeyValues> xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors) {
+            try {
+                final KeyValues kv = new KeyValues();
+                for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
+                    kv.put(attr.getKey().toString(), attr.getValue());
+                }
+                return repository.add(name, new StringReader(""), kv, anchors);
+            } catch (IOException e) {
+                throw Throwables.propagate(e);
+            }
+        }
+    }
+
+    protected abstract class XMLSerializerConfigurationBase implements XMLSerializerConfiguration<KeyValues> {
+        public Name getRootName() {
+            return null;
+        }
+
+        public Map<String, URI> getNamespaceMappings() {
+            return Maps.newHashMap();
+        }
+
+        public Query getQuery() {
+            return Query.any();
+        }
+
+        @Override
+        public Map<Name, String> extractAttributes(Layer<KeyValues> layer) {
+            final Map<Name, String> attributes = Maps.newHashMap();
+            for (Map.Entry<String, Object> kv : layer.data(KeyValues.class).entrySet()) {
+                attributes.put(Name.fromString(kv.getKey()), kv.getValue().toString());
+            }
+            return attributes;
+        }
+
+        @Override
+        public XMLNodePath extractXMLNodePath(Layer<KeyValues> layer) {
+            return null; // FIXME
+        }
     }
 }

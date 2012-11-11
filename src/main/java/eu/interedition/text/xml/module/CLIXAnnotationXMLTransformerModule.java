@@ -70,7 +70,7 @@ public class CLIXAnnotationXMLTransformerModule<T> extends XMLTransformerModuleA
                 final TextRange range = new TextRange(a.getOffset(), textOffset);
 
                 final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-                configuration.createAnnotation(a.getName(), a.getAttributes(), new Anchor(transformer.getTarget(), range));
+                configuration.xmlElement(a.getName(), a.getAttributes(), new Anchor(transformer.getTarget(), range));
             }
         }
     }

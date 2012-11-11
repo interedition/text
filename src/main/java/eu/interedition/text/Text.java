@@ -1,6 +1,8 @@
 package eu.interedition.text;
 
+import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
@@ -9,9 +11,13 @@ import java.util.SortedSet;
  */
 public interface Text {
 
-    Reader read();
+    void read(Writer target) throws IOException;
 
-    Reader read(TextRange range);
+    void read(TextRange range, Writer target) throws IOException;
+
+    Reader read() throws IOException;
+
+    Reader read(TextRange range) throws IOException;
 
     SortedMap<TextRange,String> read(SortedSet<TextRange> textRanges);
 

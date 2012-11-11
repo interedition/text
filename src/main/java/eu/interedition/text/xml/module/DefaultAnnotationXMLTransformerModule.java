@@ -58,7 +58,7 @@ public class DefaultAnnotationXMLTransformerModule<T> extends XMLTransformerModu
         final TextRange range = new TextRange(startOffsetStack.pop(), transformer.getTextOffset());
 
         final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-        configuration.createAnnotation(entity.getName(), entity.getAttributes(), new Anchor(transformer.getTarget(), range));
+        configuration.xmlElement(entity.getName(), entity.getAttributes(), new Anchor(transformer.getTarget(), range));
     }
     super.end(transformer, entity);
   }

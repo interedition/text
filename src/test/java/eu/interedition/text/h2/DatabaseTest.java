@@ -1,9 +1,11 @@
 package eu.interedition.text.h2;
 
 import eu.interedition.text.AbstractTest;
+import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.simple.KeyValues;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -21,8 +23,13 @@ public class DatabaseTest extends AbstractTest {
     private static SingleConnectionDataSource ds;
 
     @Test
-    public void create() throws SQLException, IOException {
-        repository().add(new Name(TEST_NS, "dbLayer"), new StringReader("Hello World"), null);
+    public void createAndRead() throws SQLException, IOException {
+        final Layer<KeyValues> added = repository().add(new Name(TEST_NS, "dbLayer"), new StringReader("Hello World"), null);
+
+        final PrintWriter out = new PrintWriter(System.out);
+        added.read(out);
+        out.println();
+        out.flush();
     }
 
     @Test

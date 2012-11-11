@@ -17,28 +17,20 @@
  * limitations under the License.
  * #L%
  */
-package eu.interedition.text.simple;
+package eu.interedition.text.xml;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
-import eu.interedition.text.TextRange;
-import eu.interedition.text.xml.XMLEntity;
-import eu.interedition.text.xml.XMLTransformerConfiguration;
-import eu.interedition.text.xml.XMLTransformerModule;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static eu.interedition.text.TextConstants.XML_TRANSFORM_NAME;
-
-public class SimpleXMLTransformerConfiguration<T> implements XMLTransformerConfiguration<T> {
+public abstract class XMLTransformerConfigurationBase<T> implements XMLTransformerConfiguration<T> {
 
     private Set<Name> excluded = Sets.newHashSet();
     private Set<Name> included = Sets.newHashSet();
@@ -50,11 +42,6 @@ public class SimpleXMLTransformerConfiguration<T> implements XMLTransformerConfi
     private int textBufferSize = 102400;
     private boolean removeLeadingWhitespace = true;
     private List<XMLTransformerModule<T>> modules = Lists.newArrayList();
-    private final SimpleTextRepository<T> repository;
-
-    public SimpleXMLTransformerConfiguration(SimpleTextRepository<T> repository) {
-        this.repository = repository;
-    }
 
     public void addLineElement(Name lineElementName) {
         lineElements.add(lineElementName);
@@ -144,30 +131,9 @@ public class SimpleXMLTransformerConfiguration<T> implements XMLTransformerConfi
         this.removeLeadingWhitespace = removeLeadingWhitespace;
     }
 
-    @Override
-    public Layer<T> createTarget(Layer source) {
-        try {
-            return repository.add(XML_TRANSFORM_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
-    }
+    public abstract Layer<T> targetFor(Layer source);
 
-    @Override
-    public void writeText(Layer<T> target, Reader text) throws IOException {
-        try {
-            repository.write(target, text);
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
-    }
+    public abstract Layer<T> xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors);
 
-    @Override
-    public Layer<T> createAnnotation(Name name, Map<Name, Object> attributes, Anchor... anchors) {
-        try {
-            return repository.add(name, new StringReader(""), null, anchors);
-        } catch (IOException e) {
-            throw Throwables.propagate(e);
-        }
-    }
+    public abstract void write(Layer<T> target, Reader text) throws IOException;
 }

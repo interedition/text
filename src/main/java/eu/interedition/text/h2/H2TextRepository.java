@@ -5,6 +5,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
+import com.google.common.io.Closeables;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
@@ -13,9 +14,15 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
+import eu.interedition.text.data.DataMapper;
+import eu.interedition.text.data.SerializableDataMapper;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
+import java.io.Writer;
 import java.net.URI;
+import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -36,6 +43,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
     private final DataSource ds;
     private final boolean transactional;
 
+    final DataMapper<T> dataMapper = new SerializableDataMapper<T>();
     private final H2Query<T> query = new H2Query<T>();
     private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
 
@@ -56,7 +64,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
             stmt = connection.createStatement();
             stmt.executeUpdate("create sequence if not exists interedition_text_id");
             stmt.executeUpdate("create table if not exists interedition_name (id bigint primary key, ln varchar(100) not null, ns varchar(100), unique (ln, ns))");
-            stmt.executeUpdate("create table if not exists interedition_text_layer (id bigint primary key, name_id bigint not null references interedition_name (id) on delete cascade, text_content clob not null, layer_data clob)");
+            stmt.executeUpdate("create table if not exists interedition_text_layer (id bigint primary key, name_id bigint not null references interedition_name (id) on delete cascade, text_content clob not null, layer_data blob)");
             stmt.executeUpdate("create table if not exists interedition_text_anchor (from_id bigint not null references interedition_text_layer (id) on delete cascade, to_id bigint not null references interedition_text_layer (id) on delete cascade, range_start bigint not null, range_end bigint not null)");
             commit(connection);
             return this;
@@ -116,11 +124,27 @@ public class H2TextRepository<T> implements TextRepository<T> {
 
             insertLayer.setLong(1, name(connection, name).getId());
 
-            final Clob textStream = connection.createClob();
-            CharStreams.copy(text, textStream.setCharacterStream(1));
-            insertLayer.setClob(2, textStream);
+            final Clob textClob = connection.createClob();
+            Writer textWriter = null;
+            try {
+                CharStreams.copy(text, textWriter = textClob.setCharacterStream(1));
+            } finally {
+                Closeables.close(textWriter, false);
+            }
+            insertLayer.setClob(2, textClob);
 
-            insertLayer.setNull(3, Types.CLOB);
+            if (data != null) {
+                final Blob dataBlob = connection.createBlob();
+                OutputStream dataStream = null;
+                try {
+                    dataMapper.map(data, dataStream = dataBlob.setBinaryStream(1));
+                } finally {
+                    Closeables.close(dataStream, false);
+                }
+                insertLayer.setBlob(3, dataBlob);
+            } else {
+                insertLayer.setNull(3, Types.BLOB);
+            }
 
             final long id = Iterators.getNext(primaryKeySource, null);
             insertLayer.setLong(4, id);
@@ -221,5 +245,13 @@ public class H2TextRepository<T> implements TextRepository<T> {
             }
         }
         return Throwables.propagate(e);
+    }
+
+    public T data(InputStream stream, Class<T> type) {
+        try {
+            return dataMapper.unmap(stream, type);
+        } catch (IOException e) {
+            throw Throwables.propagate(e);
+        }
     }
 }

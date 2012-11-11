@@ -8,8 +8,10 @@ import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.TextRange;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -48,8 +50,18 @@ public class SimpleLayer<T> implements Layer<T> {
     }
 
     @Override
-    public T getData() {
+    public T data(Class<T> type) {
         return data;
+    }
+
+    @Override
+    public void read(Writer target) throws IOException {
+        read(null, target);
+    }
+
+    @Override
+    public void read(TextRange range, Writer target) throws IOException {
+        target.write(range == null ? text : range.apply(text));
     }
 
     @Override
