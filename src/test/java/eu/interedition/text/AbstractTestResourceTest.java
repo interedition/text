@@ -268,7 +268,11 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         }
 
         public Map<String, URI> getNamespaceMappings() {
-            return Maps.newHashMap();
+            final Map<String, URI> nsMap = Maps.newHashMap();
+            nsMap.put("", TEI_NS);
+            nsMap.put("ie", TextConstants.INTEREDITION_NS_URI);
+            nsMap.put(TextConstants.CLIX_NS_PREFIX, TextConstants.CLIX_NS);
+            return nsMap;
         }
 
         public Query getQuery() {
@@ -286,7 +290,8 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
 
         @Override
         public XMLNodePath extractXMLNodePath(Layer<KeyValues> layer) {
-            return null; // FIXME
+            final Object xmlNode = layer.data(KeyValues.class).get(TextConstants.XML_NODE_ATTR_NAME.toString());
+            return (xmlNode == null || xmlNode instanceof XMLNodePath) ? (XMLNodePath) xmlNode : XMLNodePath.fromString(xmlNode.toString());
         }
     }
 }

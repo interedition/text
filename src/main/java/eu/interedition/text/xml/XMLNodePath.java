@@ -1,6 +1,8 @@
 package eu.interedition.text.xml;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
+import com.google.common.base.Splitter;
 import eu.interedition.text.Name;
 import eu.interedition.text.TextConstants;
 import java.util.ArrayDeque;
@@ -11,6 +13,8 @@ import java.util.Map;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class XMLNodePath extends ArrayDeque<Integer> implements Comparable<XMLNodePath> {
+    private static Joiner PATH_JOINER = Joiner.on("/");
+    private static Splitter PATH_SPLITTER = Splitter.on("/").omitEmptyStrings().trimResults();
 
     public XMLNodePath() {
         super(10);
@@ -31,6 +35,19 @@ public class XMLNodePath extends ArrayDeque<Integer> implements Comparable<XMLNo
     @Override
     public int hashCode() {
         return Objects.hashCode(toArray(new Object[size()]));
+    }
+
+    @Override
+    public String toString() {
+        return PATH_JOINER.join(this);
+    }
+
+    public static XMLNodePath fromString(String str) {
+        final XMLNodePath nodePath = new XMLNodePath();
+        for (String component : PATH_SPLITTER.split(str)) {
+            nodePath.add(Integer.parseInt(component));
+        }
+        return nodePath;
     }
 
     @Override

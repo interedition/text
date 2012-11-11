@@ -20,7 +20,6 @@
 package eu.interedition.text.xml;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.io.NullOutputStream;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
@@ -28,10 +27,7 @@ import eu.interedition.text.Name;
 import eu.interedition.text.Query;
 import eu.interedition.text.TextConstants;
 import java.io.PrintStream;
-import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
@@ -66,15 +62,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
 
             @Override
             public Name getRootName() {
-                return new Name(TextConstants.INTEREDITION_NS_URI, "text");
-            }
-
-            public Map<String, URI> getNamespaceMappings() {
-                final HashMap<String, URI> nsMap = Maps.newHashMap();
-                nsMap.put("", TEI_NS);
-                nsMap.put("ie", TextConstants.INTEREDITION_NS_URI);
-                nsMap.put(TextConstants.CLIX_NS_PREFIX, TextConstants.CLIX_NS);
-                return nsMap;
+                return new Name(TextConstants.TEI_NS, "text");
             }
 
             @Override
@@ -98,13 +86,6 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
         XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {
             public Name getRootName() {
                 return new Name(TEI_NS, "text");
-            }
-
-            public Map<String, URI> getNamespaceMappings() {
-                final HashMap<String, URI> nsMap = Maps.newHashMap();
-                nsMap.put("", TEI_NS);
-                nsMap.put(TextConstants.CLIX_NS_PREFIX, TextConstants.CLIX_NS);
-                return nsMap;
             }
 
             @Override
