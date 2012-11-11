@@ -40,23 +40,23 @@ import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class XMLEntity {
-  public static final Name COMMENT_QNAME = new Name(XML_NS_URI, "comment");
+  private static final Name COMMENT_QNAME = new Name(XML_NS_URI, "comment");
 
-  public static final Name PI_QNAME = new Name(XML_NS_URI, "pi");
+  private static final Name PI_QNAME = new Name(XML_NS_URI, "pi");
 
-  public static final Name PI_TARGET_ATTR = new Name(TextConstants.XML_NS_URI, "piTarget");
-  public static final Name PI_DATA_ATTR = new Name(TextConstants.XML_NS_URI, "piData");
+  private static final Name PI_TARGET_ATTR = new Name(TextConstants.XML_NS_URI, "piTarget");
+  private static final Name PI_DATA_ATTR = new Name(TextConstants.XML_NS_URI, "piData");
 
   private final String prefix;
   private final Name name;
   private final Map<Name, Object> attributes;
 
 
-  XMLEntity(Name name, String prefix) {
+  private XMLEntity(Name name, String prefix) {
     this(name, prefix, new HashMap<Name, Object>());
   }
 
-  XMLEntity(Name name, String prefix, Map<Name, Object> attributes) {
+  private XMLEntity(Name name, String prefix, Map<Name, Object> attributes) {
     this.name = name;
     this.prefix = prefix;
     this.attributes = attributes;
@@ -93,7 +93,7 @@ public class XMLEntity {
     return new XMLEntity(new Name(reader.getName()), XMLConstants.DEFAULT_NS_PREFIX, attributesToData(reader));
   }
 
-  public static Map<Name, Object> attributesToData(XMLStreamReader reader) {
+  private static Map<Name, Object> attributesToData(XMLStreamReader reader) {
     final int attributeCount = reader.getAttributeCount();
     final Map<Name, Object> attributes = Maps.newHashMapWithExpectedSize(attributeCount);
     for (int ac = 0; ac < attributeCount; ac++) {
@@ -102,7 +102,7 @@ public class XMLEntity {
     return attributesToData(attributes);
   }
 
-  public static Map<Name, Object> attributesToData(Map<Name, Object> attributes) {
+  private static Map<Name, Object> attributesToData(Map<Name, Object> attributes) {
     final Map<Name, Object> data = new HashMap<Name, Object>();
     for (Map.Entry<Name, Object> attribute : attributes.entrySet()) {
       final URI namespace = attribute.getKey().getNamespace();

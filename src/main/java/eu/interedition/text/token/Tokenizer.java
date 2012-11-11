@@ -82,7 +82,7 @@ public class Tokenizer<T> implements TextStream.Listener<T> {
         token();
     }
 
-    protected void token() {
+    void token() {
         if (tokenStart < offset) {
             settings.token(this, new TextRange(tokenStart, offset));
             tokenCount++;

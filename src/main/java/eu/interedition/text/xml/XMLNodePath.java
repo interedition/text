@@ -16,7 +16,7 @@ public class XMLNodePath extends ArrayDeque<Integer> implements Comparable<XMLNo
         super(10);
     }
 
-    public XMLNodePath(XMLNodePath nodePath) {
+    private XMLNodePath(XMLNodePath nodePath) {
         super(nodePath);
     }
 

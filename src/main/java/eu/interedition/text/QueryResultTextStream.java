@@ -29,7 +29,7 @@ public class QueryResultTextStream<T> implements TextStream<T> {
     private final Query query;
     private final long pageSize;
 
-    public QueryResultTextStream(TextRepository<T> repository, Text text, Query query, long pageSize) {
+    private QueryResultTextStream(TextRepository<T> repository, Text text, Query query, long pageSize) {
         this.repository = repository;
         this.text = text;
         this.query = query;
@@ -140,7 +140,7 @@ public class QueryResultTextStream<T> implements TextStream<T> {
         });
     }
 
-    protected static <T> Iterable<Layer<T>> substract(Iterable<Layer<T>> from, Set<Layer<T>> selector, boolean remove) {
+    private static <T> Iterable<Layer<T>> substract(Iterable<Layer<T>> from, Set<Layer<T>> selector, boolean remove) {
         final List<Layer<T>> filtered = Lists.newArrayList();
         for (Iterator<Layer<T>> it = from.iterator(); it.hasNext();  ) {
             final Layer<T> annotation = it.next();

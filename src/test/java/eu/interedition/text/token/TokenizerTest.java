@@ -54,7 +54,7 @@ public class TokenizerTest extends AbstractTestResourceTest {
         printTokenizedWitness(tokenize(), name(SENTENCE_NAME));
     }
 
-    protected Layer<KeyValues> tokenize() throws IOException {
+    Layer<KeyValues> tokenize() throws IOException {
         final Layer<KeyValues> layer = text("gottsched-cato-tei.xml");
         new QueryResultTextStream<KeyValues>(repository, layer).stream(new Tokenizer<KeyValues>(new TokenizerSettings<KeyValues>() {
             private StringBuffer buf = new StringBuffer();
@@ -109,7 +109,7 @@ public class TokenizerTest extends AbstractTestResourceTest {
         return layer;
     }
 
-    protected void printTokenizedWitness(Layer<KeyValues> layer, Query tokenCriterion) throws IOException {
+    void printTokenizedWitness(Layer<KeyValues> layer, Query tokenCriterion) throws IOException {
         if (!LOG.isLoggable(Level.FINE)) {
             return;
         }

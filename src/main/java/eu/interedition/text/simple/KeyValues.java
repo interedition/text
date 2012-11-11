@@ -11,7 +11,7 @@ public class KeyValues extends HashMap<String,Object> {
     public KeyValues() {
     }
 
-    public KeyValues(Map<? extends String, ? extends Object> m) {
+    public KeyValues(Map<? extends String, ?> m) {
         super(m);
     }
 

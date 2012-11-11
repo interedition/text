@@ -20,12 +20,12 @@ import static eu.interedition.text.Query.rangeOverlap;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class JSONSerializer {
+class JSONSerializer {
 
-    public static final String TEXT_FIELD = "t";
-    public static final String TEXT_LENGTH_FIELD = "l";
-    public static final String ANNOTATIONS_FIELD = "a";
-    public static final String NAMES_FIELD = "n";
+    private static final String TEXT_FIELD = "t";
+    private static final String TEXT_LENGTH_FIELD = "l";
+    private static final String ANNOTATIONS_FIELD = "a";
+    private static final String NAMES_FIELD = "n";
 
     public static void serialize(final JsonGenerator jgen, TextRepository<?> repository, Layer<?> layer, final JSONSerializerConfiguration config) throws IOException {
         final TextRange range = config.getRange();

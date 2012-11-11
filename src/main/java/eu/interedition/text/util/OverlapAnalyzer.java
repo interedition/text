@@ -32,9 +32,9 @@ import java.util.SortedSet;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class OverlapAnalyzer<T> extends TextStream.ListenerAdapter<T> {
-    protected Set<Name> selfOverlapping;
-    protected Set<SortedSet<Name>> overlapping;
-    protected Set<Layer<T>> started;
+    private Set<Name> selfOverlapping;
+    private Set<SortedSet<Name>> overlapping;
+    private Set<Layer<T>> started;
 
     public Set<Name> getSelfOverlapping() {
         return selfOverlapping;

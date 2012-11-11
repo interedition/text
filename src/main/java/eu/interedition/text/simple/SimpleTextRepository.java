@@ -78,7 +78,7 @@ public class SimpleTextRepository<T> implements TextRepository<T> {
         public void close() throws Exception {
         }
     }
-    protected final Function<Query, Predicate<Layer<T>>> TO_PREDICATE = new Function<Query, Predicate<Layer<T>>>() {
+    private final Function<Query, Predicate<Layer<T>>> TO_PREDICATE = new Function<Query, Predicate<Layer<T>>>() {
         @SuppressWarnings("unchecked")
         @Override
         public Predicate<Layer<T>> apply(@Nullable Query input) {

@@ -21,10 +21,10 @@ import java.util.SortedSet;
  */
 public class SimpleLayer<T> implements Layer<T> {
 
-    protected final Name name;
-    protected String text;
-    protected final Set<Anchor> anchors;
-    protected final T data;
+    private final Name name;
+    String text;
+    private final Set<Anchor> anchors;
+    private final T data;
 
     public SimpleLayer(Name name, String text, T data, Set<Anchor> anchors) {
         this.name = name;

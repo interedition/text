@@ -45,12 +45,12 @@ public class TextRange implements Comparable<TextRange>, Function<String, String
     /**
      * The start offset of the segment (counted from zero, inclusive).
      */
-    protected final long start;
+    private final long start;
 
     /**
      * The end offset of the segment (counted from zero, exclusive).
      */
-    protected final long end;
+    private final long end;
 
     /**
      * Creates a text segment address.
@@ -110,7 +110,7 @@ public class TextRange implements Comparable<TextRange>, Function<String, String
      * @param b b range
      * @return <code>true</code>/<code>false</code>
      */
-    public boolean enclosesWithSuffix(TextRange b) {
+    boolean enclosesWithSuffix(TextRange b) {
         return (start == b.start) && (end > b.end);
     }
 
@@ -120,7 +120,7 @@ public class TextRange implements Comparable<TextRange>, Function<String, String
      * @param b b range
      * @return <code>true</code>/<code>false</code>
      */
-    public boolean enclosesWithPrefix(TextRange b) {
+    boolean enclosesWithPrefix(TextRange b) {
         return (start < b.start) && (end == b.end);
     }
 
@@ -130,7 +130,7 @@ public class TextRange implements Comparable<TextRange>, Function<String, String
      * @param b b range
      * @return <code>true</code>/<code>false</code>
      */
-    public boolean fitsWithin(TextRange b) {
+    boolean fitsWithin(TextRange b) {
         return !equals(b) && (start >= b.start) && (end <= b.end);
     }
 
@@ -230,7 +230,7 @@ public class TextRange implements Comparable<TextRange>, Function<String, String
      * @param end   end offset
      * @return string representation
      */
-    public static String toString(long start, long end) {
+    private static String toString(long start, long end) {
         return "[" + start + ", " + end + "]";
     }
 

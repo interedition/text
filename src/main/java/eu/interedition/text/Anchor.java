@@ -26,8 +26,8 @@ import com.google.common.base.Objects;
  */
 public class Anchor {
 
-    protected final Text text;
-    protected final TextRange range;
+    private final Text text;
+    private final TextRange range;
 
     public Anchor(Text text, TextRange range) {
         this.text = text;

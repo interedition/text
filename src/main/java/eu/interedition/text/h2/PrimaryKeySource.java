@@ -10,13 +10,13 @@ import java.util.Iterator;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class PrimaryKeySource implements Iterable<Long>, Iterator<Long> {
+class PrimaryKeySource implements Iterable<Long>, Iterator<Long> {
 
     private final H2TextRepository<?> repository;
     private final long low;
     private long next = -1;
 
-    public PrimaryKeySource(H2TextRepository<?> repository, long low) {
+    private PrimaryKeySource(H2TextRepository<?> repository, long low) {
         this.repository = repository;
         this.low = low;
     }

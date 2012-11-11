@@ -40,16 +40,16 @@ import static eu.interedition.text.TextConstants.XML_TRANSFORM_NAME;
 
 public class SimpleXMLTransformerConfiguration<T> implements XMLTransformerConfiguration<T> {
 
-    protected Set<Name> excluded = Sets.newHashSet();
-    protected Set<Name> included = Sets.newHashSet();
-    protected Set<Name> lineElements = Sets.newHashSet();
-    protected Set<Name> containerElements = Sets.newHashSet();
-    protected Set<Name> notableElements = Sets.newHashSet();
-    protected char notableCharacter = '\u25CA';
-    protected boolean compressingWhitespace = true;
+    private Set<Name> excluded = Sets.newHashSet();
+    private Set<Name> included = Sets.newHashSet();
+    private Set<Name> lineElements = Sets.newHashSet();
+    private Set<Name> containerElements = Sets.newHashSet();
+    private Set<Name> notableElements = Sets.newHashSet();
+    private char notableCharacter = '\u25CA';
+    private boolean compressingWhitespace = true;
     private int textBufferSize = 102400;
     private boolean removeLeadingWhitespace = true;
-    protected List<XMLTransformerModule<T>> modules = Lists.newArrayList();
+    private List<XMLTransformerModule<T>> modules = Lists.newArrayList();
     private final SimpleTextRepository<T> repository;
 
     public SimpleXMLTransformerConfiguration(SimpleTextRepository<T> repository) {

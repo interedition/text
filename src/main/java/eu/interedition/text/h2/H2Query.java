@@ -26,9 +26,18 @@ import java.util.Set;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class H2QueryBuilder<T> {
+public class H2Query<T> {
 
-    final Joiner WITH_SPACES = Joiner.on(" ");
+    private final Joiner WITH_SPACES = Joiner.on(" ");
+
+    public Layer<T> byId(H2TextRepository<T> repository, long id) {
+        QueryResult<T> results = null;
+        try {
+            return Iterables.getOnlyElement(results(repository, Query.is(new LayerRelation<T>(null, null, id, repository))));
+        } finally {
+            SQL.closeQuietly(results);
+        }
+    }
 
     public String sql(Query query) {
         final Clause clause = build(query.getRoot());
@@ -38,17 +47,15 @@ public class H2QueryBuilder<T> {
         clause.joins(joins, 0);
         clause.clauses(clauses);
 
-        return new StringBuilder()
-                .append("SELECT l.id, n.ns, n.ln, n.id, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end")
-                .append(" FROM interedition_text_layer l")
-                .append(" JOIN interedition_name n ON n.id = l.name_id")
-                .append(" LEFT JOIN interedition_text_anchor a ON a.from_id = l.id")
-                .append(" LEFT JOIN interedition_layer al ON a.to_id = al.id")
-                .append(" LEFT JOIN interedition_name an ON an.id = al.name_id")
-                .append(" ").append(WITH_SPACES.join(Iterables.filter(joins, Predicates.not(Predicates.equalTo("")))))
-                .append(" WHERE ").append(WITH_SPACES.join(Iterables.filter(clauses, Predicates.not(Predicates.equalTo("")))))
-                .append(" ORDER BY l.id, al.id")
-                .toString();
+        return "SELECT l.id, n.ns, n.ln, n.id, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end" +
+                " FROM interedition_text_layer l" +
+                " JOIN interedition_name n ON n.id = l.name_id" +
+                " LEFT JOIN interedition_text_anchor a ON a.from_id = l.id" +
+                " LEFT JOIN interedition_layer al ON a.to_id = al.id" +
+                " LEFT JOIN interedition_name an ON an.id = al.name_id" +
+                " " + WITH_SPACES.join(Iterables.filter(joins, Predicates.not(Predicates.equalTo("")))) +
+                " WHERE " + WITH_SPACES.join(Iterables.filter(clauses, Predicates.not(Predicates.equalTo("")))) +
+                " ORDER BY l.id, al.id";
     }
 
     public QueryResult<T> results(final H2TextRepository<T> repository, final Query query) {
@@ -76,10 +83,11 @@ public class H2QueryBuilder<T> {
                                 while (resultSet.next()) {
                                     final long layerId = resultSet.getLong(1);
                                     if (layer == null || layer.getId() != layerId) {
-                                        if (layer != null || resultSet.isLast()) {
-                                            result = layer;
-                                        }
+                                        result = layer;
                                         layer = new LayerRelation<T>(new NameRelation(resultSet.getString(2), resultSet.getString(3), resultSet.getLong(4)), anchors = Sets.newHashSet(), layerId, repository);
+                                    }
+                                    if (resultSet.isLast()) {
+                                        result = layer;
                                     }
                                     final NameRelation targetName = new NameRelation(resultSet.getString(5), resultSet.getString(6), resultSet.getLong(7));
                                     final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), resultSet.getLong(8), repository);
@@ -94,8 +102,9 @@ public class H2QueryBuilder<T> {
                                     SQL.closeQuietly(resultSet);
                                     SQL.closeQuietly(queryStmt);
                                     repository.commit(connection);
+                                    return endOfData();
                                 }
-                                return (result == null ? endOfData() : result);
+                                return result;
                             } catch (SQLException e) {
                                 throw repository.rollbackAndConvert(connection, e);
                             }
@@ -115,11 +124,12 @@ public class H2QueryBuilder<T> {
             @Override
             protected void finalize() throws Throwable {
                 close();
+                super.finalize();
             }
         };
     }
 
-    protected Clause build(Query input) {
+    Clause build(Query input) {
         if (input instanceof Query.Any) {
             return ANY;
         } else if (input instanceof Query.None) {
@@ -144,7 +154,7 @@ public class H2QueryBuilder<T> {
         throw new IllegalArgumentException(input.toString());
     }
 
-    protected List<Clause> build(List<Query> queries) {
+    List<Clause> build(List<Query> queries) {
         final List<Clause> clauses = Lists.newArrayListWithExpectedSize(queries.size());
         for (Query q : queries) {
             clauses.add(build(q));
@@ -225,15 +235,15 @@ public class H2QueryBuilder<T> {
             final StringBuilder builder = new StringBuilder(relation + ".ln = ").append(name.getLocalName()).append(" AND ");
             final URI ns = name.getNamespace();
             if (ns == null) {
-                builder.append(relation + ".ns IS NULL");
+                builder.append(relation).append(".ns IS NULL");
             } else {
-                builder.append(relation + ".ns = '").append(ns.toString()).append("'"); // FIXME: SQL-escape ns argument
+                builder.append(relation).append(".ns = '").append(ns.toString()).append("'"); // FIXME: SQL-escape ns argument
             }
             return builder.toString();
         }
     }
 
-    protected class LayerClause extends Clause {
+    class LayerClause extends Clause {
         final Layer<?> layer;
 
         LayerClause(Layer<?> layer) {
@@ -276,7 +286,7 @@ public class H2QueryBuilder<T> {
         final TextRange range;
         String relation = "a";
 
-        protected RangeClause(TextRange range) {
+        RangeClause(TextRange range) {
             this.range = range;
         }
 
@@ -288,7 +298,7 @@ public class H2QueryBuilder<T> {
         }
     }
 
-    protected class RangeEnclosesClause extends RangeClause {
+    class RangeEnclosesClause extends RangeClause {
 
         RangeEnclosesClause(TextRange range) {
             super(range);
@@ -300,7 +310,7 @@ public class H2QueryBuilder<T> {
         }
     }
 
-    protected class RangeLengthClause extends RangeClause {
+    class RangeLengthClause extends RangeClause {
 
         RangeLengthClause(TextRange range) {
             super(range);
@@ -312,7 +322,7 @@ public class H2QueryBuilder<T> {
         }
     }
 
-    protected class RangeOverlapClause extends RangeClause {
+    class RangeOverlapClause extends RangeClause {
 
         RangeOverlapClause(TextRange range) {
             super(range);
@@ -324,14 +334,14 @@ public class H2QueryBuilder<T> {
         }
     }
 
-    protected final Clause ANY = new Clause() {
+    private final Clause ANY = new Clause() {
         @Override
         public String toString() {
             return "1 = 1";
         }
     };
 
-    protected final Clause NONE = new Clause() {
+    private final Clause NONE = new Clause() {
         @Override
         public String toString() {
             return "1 <> 1";

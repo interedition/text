@@ -13,15 +13,15 @@ import java.util.LinkedList;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class ChangeList implements Iterable<Change> {
-  protected final LinkedList<Change> changes = Lists.newLinkedList();
-  protected final long prevLength;
-  protected long nextLength = 0;
+  private final LinkedList<Change> changes = Lists.newLinkedList();
+  private final long prevLength;
+  private long nextLength = 0;
 
   public ChangeList(long prevLength) {
     this.prevLength = prevLength;
   }
 
-  public ChangeList(long prevLength, Iterable<? extends Change> c) {
+  private ChangeList(long prevLength, Iterable<? extends Change> c) {
     this(prevLength);
     append(c);
   }
@@ -103,7 +103,7 @@ public class ChangeList implements Iterable<Change> {
     return this;
   }
 
-  public ChangeList append(Iterable<? extends Change> changes) {
+  ChangeList append(Iterable<? extends Change> changes) {
     Change lastChange = null;
     boolean lastIsRetain = false;
     for (Change toAppend : changes) {
@@ -129,12 +129,12 @@ public class ChangeList implements Iterable<Change> {
     return this;
   }
 
-  public ChangeList append(Change... changes) {
+  ChangeList append(Change... changes) {
     return append(Arrays.asList(changes));
   }
 
   @Override
   public String toString() {
-    return new StringBuilder("{|").append(prevLength).append("| ==> ").append(Iterables.toString(changes)).append("}").toString();
+    return "{|" + prevLength + "| ==> " + Iterables.toString(changes) + "}";
   }
 }

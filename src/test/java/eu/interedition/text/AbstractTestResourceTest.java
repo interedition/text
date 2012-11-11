@@ -68,9 +68,9 @@ import static eu.interedition.text.TextConstants.TEI_NS;
  */
 public abstract class AbstractTestResourceTest extends AbstractTextTest {
     protected static final XMLInputFactory xmlInputFactory = XML.createXMLInputFactory();
-    protected static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
+    private static final TransformerFactory TRANSFORMER_FACTORY = TransformerFactory.newInstance();
 
-    protected XMLTransformer<KeyValues> xmlTransformer;
+    private XMLTransformer<KeyValues> xmlTransformer;
 
     private Map<URI, Layer<KeyValues>> sources = Maps.newHashMap();
     private Map<URI, Layer<KeyValues>> texts = Maps.newHashMap();
@@ -131,7 +131,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         return Lists.newArrayList();
     }
 
-    protected SimpleXMLTransformerConfiguration<KeyValues> configure(SimpleXMLTransformerConfiguration<KeyValues> pc) {
+    SimpleXMLTransformerConfiguration<KeyValues> configure(SimpleXMLTransformerConfiguration<KeyValues> pc) {
         pc.addLineElement(new Name(TEI_NS, "div"));
         pc.addLineElement(new Name(TEI_NS, "head"));
         pc.addLineElement(new Name(TEI_NS, "sp"));
@@ -158,7 +158,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         return pc;
     }
 
-    protected SimpleXMLTransformerConfiguration<KeyValues> createXMLParserConfiguration() {
+    SimpleXMLTransformerConfiguration<KeyValues> createXMLParserConfiguration() {
         SimpleXMLTransformerConfiguration<KeyValues> pc = new SimpleXMLTransformerConfiguration<KeyValues>((SimpleTextRepository<KeyValues>) repository);
 
         final List<XMLTransformerModule<KeyValues>> modules = pc.getModules();
@@ -173,7 +173,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         return pc;
     }
 
-    protected synchronized void load(URI resource) {
+    synchronized void load(URI resource) {
         try {
             if (!texts.containsKey(resource)) {
                 final Stopwatch stopWatch = new Stopwatch().start();
@@ -210,7 +210,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         }
     }
 
-    protected synchronized void unload(String resource) throws IOException {
+    synchronized void unload(String resource) throws IOException {
         try {
             unload(AbstractTestResourceTest.class.getResource(resource).toURI());
         } catch (URISyntaxException e) {
@@ -218,7 +218,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         }
     }
 
-    protected synchronized void unload(URI resource) throws IOException {
+    synchronized void unload(URI resource) throws IOException {
         repository.delete(Collections.singleton(texts.remove(resource)));
         repository.delete(Collections.singleton(sources.remove(resource)));
     }

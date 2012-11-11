@@ -31,7 +31,7 @@ public class DatabaseTest extends AbstractTest {
         repository.delete(Collections.singleton(repository.add(new Name(TEST_NS, "dbLayer"), new StringReader("Hello World"), null)));
     }
 
-    public static H2TextRepository<KeyValues> repository() throws SQLException {
+    private static H2TextRepository<KeyValues> repository() throws SQLException {
         if (repository == null) {
             final StringBuilder url = new StringBuilder("jdbc:h2:mem:text;DB_CLOSE_DELAY=-1");
             if (System.getProperty("interedition.debug") != null) {

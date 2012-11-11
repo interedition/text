@@ -92,7 +92,7 @@ public abstract class Query {
     }
 
     public abstract static class OperatorQuery extends Query {
-        protected final List<Query> operands = Lists.newLinkedList();
+        final List<Query> operands = Lists.newLinkedList();
 
         OperatorQuery() {
         }
@@ -119,7 +119,7 @@ public abstract class Query {
     }
 
     public abstract static class RangeQuery extends Query {
-        protected final TextRange range;
+        final TextRange range;
 
         RangeQuery(TextRange range) {
             this.range = range;

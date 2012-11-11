@@ -46,7 +46,7 @@ public class AnnotationEventSourceTest extends AbstractTestResourceTest {
         )).stream(DEBUG_LISTENER);
     }
 
-    public final TextStream.Listener<KeyValues> DEBUG_LISTENER = new TextStream.Listener<KeyValues>() {
+    private final TextStream.Listener<KeyValues> DEBUG_LISTENER = new TextStream.Listener<KeyValues>() {
 
         public void start(long contentLength) {
             LOG.fine("START TEXT: (" + contentLength + " character(s))");

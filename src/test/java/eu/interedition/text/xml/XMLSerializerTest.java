@@ -74,8 +74,8 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
 
             public List<Name> getHierarchy() {
                 return Lists.newArrayList(
-                        new Name((URI) null, "phr"),
-                        new Name((URI) null, "s")
+                        new Name(null, "phr"),
+                        new Name(null, "s")
                 );
             }
 
@@ -144,7 +144,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
         }
     }
 
-    protected ContentHandler createOutputHandler() throws Exception {
+    ContentHandler createOutputHandler() throws Exception {
         final TransformerHandler transformerHandler = transformerFactory.newTransformerHandler();
         transformerHandler.setResult(new StreamResult(LOG.isLoggable(Level.FINE) ? System.out : NULL_STREAM));
         return transformerHandler;

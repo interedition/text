@@ -29,9 +29,7 @@ public class Logging {
         final StandardOutHandler handler = new StandardOutHandler(logLevel);
 
         final Set<String> interestingLoggers = Sets.newHashSet(Arrays.asList(loggers));
-        if (!logLevel.equals(Level.INFO)) {
-            interestingLoggers.add("eu.interedition.text");
-        }
+        interestingLoggers.add("eu.interedition.text");
 
         for (String interesting : interestingLoggers) {
             final Logger logger = Logger.getLogger(interesting);
@@ -49,10 +47,9 @@ public class Logging {
             configuredLoggers.add(loggerNames.nextElement());
         }
 
-        final Logger out = Logger.getLogger(Logging.class.getName());
         for (String logger : configuredLoggers) {
             final Logger instance = Logger.getLogger(logger);
-            out.info("Logger config: '" + logger + "' :: " + instance.getLevel() + " [ delegate: "
+            System.out.println("Logger config: '" + logger + "' :: " + instance.getLevel() + " [ delegate: "
                     + instance.getUseParentHandlers() + " ] [ #handlers: " + instance.getHandlers().length
                     + " ]");
         }

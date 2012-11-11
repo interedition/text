@@ -9,7 +9,7 @@ import org.codehaus.jackson.map.SerializerProvider;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class TextSerializer extends JsonSerializer<Layer> {
+class TextSerializer extends JsonSerializer<Layer> {
   private static final String LENGTH_FIELD = "l";
 
   @Override

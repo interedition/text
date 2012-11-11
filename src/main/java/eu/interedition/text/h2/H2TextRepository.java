@@ -33,11 +33,11 @@ import javax.sql.DataSource;
  */
 public class H2TextRepository<T> implements TextRepository<T> {
 
-    final DataSource ds;
-    final boolean transactional;
+    private final DataSource ds;
+    private final boolean transactional;
 
-    final H2QueryBuilder<T> queryBuilder = new H2QueryBuilder<T>();
-    final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
+    private final H2Query<T> query = new H2Query<T>();
+    private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
 
     public H2TextRepository(DataSource ds) {
         this(ds, true);
@@ -68,9 +68,13 @@ public class H2TextRepository<T> implements TextRepository<T> {
         }
     }
 
+    public Layer<T> byId(long id) {
+        return query.byId(this, id);
+    }
+
     @Override
     public QueryResult<T> query(Query query) {
-        return queryBuilder.results(this, query);
+        return this.query.results(this, query);
     }
 
     @Override
@@ -155,7 +159,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
         return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 
-    protected NameRelation name(Connection connection, Name name) throws SQLException {
+    NameRelation name(Connection connection, Name name) throws SQLException {
         if (name instanceof NameRelation) {
             return (NameRelation) name;
         }
@@ -184,7 +188,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
             final long id = Iterators.getNext(primaryKeySource, null);
             insertName.setLong(1, id);
             insertName.setString(2, ln);
-            insertName.setString(3, ns.toString());
+            insertName.setString(3, ns == null ? null : ns.toString());
             insertName.executeUpdate();
 
             return new NameRelation(name, id);
@@ -195,7 +199,7 @@ public class H2TextRepository<T> implements TextRepository<T> {
         }
     }
 
-    protected Connection begin() throws SQLException {
+    Connection begin() throws SQLException {
         final Connection connection = ds.getConnection();
         if (transactional) {
             connection.setAutoCommit(false);
@@ -203,13 +207,13 @@ public class H2TextRepository<T> implements TextRepository<T> {
         return connection;
     }
 
-    protected void commit(Connection connection) throws SQLException {
+    void commit(Connection connection) throws SQLException {
         if (transactional) {
             connection.commit();
         }
     }
 
-    protected RuntimeException rollbackAndConvert(Connection connection, SQLException e) {
+    RuntimeException rollbackAndConvert(Connection connection, SQLException e) {
         if (connection != null && transactional) {
             try {
                 connection.rollback();

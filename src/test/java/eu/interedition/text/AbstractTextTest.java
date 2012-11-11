@@ -35,7 +35,7 @@ import org.junit.Before;
  */
 public abstract class AbstractTextTest extends AbstractTest {
 
-    public static final String TEST_TEXT = "Hello World";
+    protected static final String TEST_TEXT = "Hello World";
 
     protected TextRepository<KeyValues> repository = new SimpleTextRepository<KeyValues>();
 
@@ -63,7 +63,7 @@ public abstract class AbstractTextTest extends AbstractTest {
         }
     }
 
-    protected String getTestText() {
+    String getTestText() {
         return TEST_TEXT;
     }
 }

@@ -10,10 +10,10 @@ import org.codehaus.jackson.map.SerializerProvider;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class AnnotationSerializer extends JsonSerializer<Layer> {
+class AnnotationSerializer extends JsonSerializer<Layer> {
 
-    public static final String NAME_FIELD = "n";
-    public static final String TARGET_FIELD = "t";
+    private static final String NAME_FIELD = "n";
+    private static final String TARGET_FIELD = "t";
     private static final String DATA_FIELD = "d";
 
     @Override

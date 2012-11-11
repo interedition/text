@@ -26,9 +26,9 @@ import javax.sql.DataSource;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SingleConnectionDataSource implements DataSource {
+class SingleConnectionDataSource implements DataSource {
 
-    final DataSource ds;
+    private final DataSource ds;
     Connection connection;
 
     public SingleConnectionDataSource(DataSource ds) {

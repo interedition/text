@@ -57,7 +57,7 @@ public class OverlapAnalyzerTest extends AbstractTestResourceTest {
         Assert.assertEquals(overlap, Iterables.getOnlyElement(analyzer.getSelfOverlapping()));
     }
 
-    protected OverlapAnalyzer<KeyValues> analyze(Layer<KeyValues> layer) throws IOException {
+    OverlapAnalyzer<KeyValues> analyze(Layer<KeyValues> layer) throws IOException {
         final OverlapAnalyzer<KeyValues> analyzer = new OverlapAnalyzer<KeyValues>();
         new QueryResultTextStream<KeyValues>(repository, layer).stream(analyzer);
         return analyzer;

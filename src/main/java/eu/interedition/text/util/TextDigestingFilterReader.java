@@ -15,14 +15,14 @@ import java.security.NoSuchAlgorithmException;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class TextDigestingFilterReader extends FilterReader {
+class TextDigestingFilterReader extends FilterReader {
     public static final byte[] NULL_DIGEST = digest("");
 
-    public MessageDigest digest;
-    public byte[] result;
-    public CharsetEncoder encoder;
+    private MessageDigest digest;
+    private byte[] result;
+    private CharsetEncoder encoder;
 
-    public TextDigestingFilterReader(Reader in) {
+    private TextDigestingFilterReader(Reader in) {
         super(in);
         try {
             this.digest = MessageDigest.getInstance("SHA-512");
@@ -57,7 +57,7 @@ public class TextDigestingFilterReader extends FilterReader {
         super.reset();
     }
 
-    public byte[] digest() {
+    byte[] digest() {
         if (result == null) {
             result = digest.digest();
             digest.reset();
@@ -65,7 +65,7 @@ public class TextDigestingFilterReader extends FilterReader {
         return result;
     }
 
-    public static byte[] digest(String str) {
+    private static byte[] digest(String str) {
         final TextDigestingFilterReader reader = new TextDigestingFilterReader(new StringReader(str));
         try {
             while (reader.read() >= 0) {

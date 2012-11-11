@@ -14,7 +14,7 @@ import javax.xml.stream.XMLStreamReader;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class ChangeSet extends HashSet<ChangeAdapter> {
+class ChangeSet extends HashSet<ChangeAdapter> {
   private static final Name CHANGE_DECL_SET = new Name(URI.create("http://www.tei-c.org/ns/geneticEditions"), "stageNotes");
   private static final Name CHANGE_DECL = new Name(URI.create("http://www.tei-c.org/ns/geneticEditions"), "stageNote");
 
@@ -28,7 +28,7 @@ public class ChangeSet extends HashSet<ChangeAdapter> {
   private String id;
   private String type;
 
-  public ChangeSet() {
+  private ChangeSet() {
     super();
   }
 
@@ -37,11 +37,11 @@ public class ChangeSet extends HashSet<ChangeAdapter> {
     this.id = id;
   }
 
-  public String getId() {
+  String getId() {
     return id;
   }
 
-  public void setId(String id) {
+  void setId(String id) {
     this.id = id;
   }
 
@@ -49,7 +49,7 @@ public class ChangeSet extends HashSet<ChangeAdapter> {
     return type;
   }
 
-  public void setType(String type) {
+  void setType(String type) {
     this.type = type;
   }
 

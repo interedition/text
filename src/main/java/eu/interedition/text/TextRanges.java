@@ -28,7 +28,7 @@ import java.util.ListIterator;
 import java.util.SortedSet;
 
 public class TextRanges {
-    public static final Ordering<TextRange> START_ORDERING = Ordering.from(new Comparator<TextRange>() {
+    private static final Ordering<TextRange> START_ORDERING = Ordering.from(new Comparator<TextRange>() {
 
         public int compare(TextRange o1, TextRange o2) {
             final long result = o1.getStart() - o2.getStart();
@@ -46,7 +46,7 @@ public class TextRanges {
 
     public static final Ordering<TextRange> NATURAL_ORDERING = Ordering.natural();
 
-    public static final Ordering<Layer<?>> orderingByTarget(final Layer<?> target) {
+    public static Ordering<Layer<?>> orderingByTarget(final Layer<?> target) {
         return Ordering.from(new Comparator<Layer<?>>() {
             @Override
             public int compare(Layer<?> o1, Layer<?> o2) {

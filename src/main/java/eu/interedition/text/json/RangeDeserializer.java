@@ -15,7 +15,7 @@ import static org.codehaus.jackson.JsonToken.VALUE_NUMBER_INT;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class RangeDeserializer extends JsonDeserializer<TextRange> {
+class RangeDeserializer extends JsonDeserializer<TextRange> {
     @Override
     public TextRange deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
         if (!START_ARRAY.equals(jp.getCurrentToken())) {

@@ -14,12 +14,15 @@ public class NameRelation extends Name {
         this.id = id;
     }
 
-    public NameRelation(Name name, long id) {
-        this(name.getNamespace(), name.getLocalName(), id);
-    }
 
     public NameRelation(String ns, String localName, long id) {
-        this(new Name(ns, localName), id);
+        super(ns, localName);
+        this.id = id;
+    }
+
+
+    public NameRelation(Name name, long id) {
+        this(name.getNamespace(), name.getLocalName(), id);
     }
 
     public long getId() {

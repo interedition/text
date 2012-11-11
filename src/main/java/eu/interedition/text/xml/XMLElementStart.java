@@ -8,9 +8,9 @@ import java.util.Map;
  */
 public class XMLElementStart {
 
-    final Name name;
-    final Map<Name, Object> attributes;
-    final long offset;
+    private final Name name;
+    private final Map<Name, Object> attributes;
+    private final long offset;
 
     public XMLElementStart(Name name, Map<Name, Object> attributes, long offset) {
         this.name = name;

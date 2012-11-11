@@ -83,7 +83,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
         handleMilestoneElements(entity, transformer);
     }
 
-    protected void handleMilestoneElements(XMLEntity entity, XMLTransformer<T> transformer) {
+    void handleMilestoneElements(XMLEntity entity, XMLTransformer<T> transformer) {
         final Name entityName = entity.getName();
         final Map<Name, Object> entityAttributes = entity.getAttributes();
 
@@ -118,7 +118,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
         milestones.put(milestoneUnit, new XMLElementStart(milestoneUnit, entityAttributes, textOffset));
     }
 
-    protected void handleSpanningElements(XMLEntity entity, XMLTransformer<T> transformer) {
+    void handleSpanningElements(XMLEntity entity, XMLTransformer<T> transformer) {
         final Map<Name, Object> entityAttributes = entity.getAttributes();
         String spanTo = null;
         String refId = null;
@@ -146,9 +146,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
                     textOffset));
         }
         if (refId != null) {
-            final Iterator<XMLElementStart> aIt = spanning.removeAll(refId).iterator();
-            while (aIt.hasNext()) {
-                final XMLElementStart a = aIt.next();
+            for (XMLElementStart a : spanning.removeAll(refId)) {
                 final TextRange range = new TextRange(a.getOffset(), textOffset);
 
                 final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();

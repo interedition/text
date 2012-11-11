@@ -28,8 +28,8 @@ import javax.xml.namespace.QName;
 
 public class Name implements Comparable<Name> {
 
-    protected final URI namespace;
-    protected final String localName;
+    private final URI namespace;
+    private final String localName;
 
     public Name(URI namespace, String localName) {
         this.namespace = namespace;
@@ -42,7 +42,7 @@ public class Name implements Comparable<Name> {
         this.localName = name.getLocalPart();
     }
 
-    public Name(String ns, String localName) {
+    protected Name(String ns, String localName) {
         this(URI.create(ns), localName);
     }
 
@@ -75,7 +75,7 @@ public class Name implements Comparable<Name> {
 
     @Override
     public String toString() {
-        return (namespace == null ? localName : new StringBuilder("{").append(namespace).append("}").append(localName).toString());
+        return (namespace == null ? localName : "{" + namespace + "}" + localName);
     }
 
     public static Name fromString(String str) {
@@ -93,7 +93,7 @@ public class Name implements Comparable<Name> {
     }
 
 
-    public static final Comparator<Name> COMPARATOR = new Comparator<Name>() {
+    private static final Comparator<Name> COMPARATOR = new Comparator<Name>() {
 
         public int compare(Name o1, Name o2) {
             final URI o1Ns = o1.getNamespace();
