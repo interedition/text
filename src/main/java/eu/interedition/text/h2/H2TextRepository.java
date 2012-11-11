@@ -16,6 +16,7 @@ import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
 import eu.interedition.text.data.DataMapper;
 import eu.interedition.text.data.SerializableDataMapper;
+import eu.interedition.text.xml.UpdateableTextRepository;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,7 +39,7 @@ import javax.sql.DataSource;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class H2TextRepository<T> implements TextRepository<T> {
+public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T> {
 
     private final Class<T> dataType;
     private final DataSource ds;
@@ -177,6 +178,36 @@ public class H2TextRepository<T> implements TextRepository<T> {
             SQL.closeQuietly(insertTarget);
             SQL.closeQuietly(insertLayer);
             SQL.closeQuietly(connection);
+        }
+    }
+
+    @Override
+    public void updateText(Layer<T> target, Reader text) throws IOException {
+        if (target instanceof LayerRelation) {
+            Connection connection = null;
+            PreparedStatement update = null;
+            try {
+                connection = begin();
+                update = connection.prepareStatement("UPDATE interedition_text_layer SET text_content = ? WHERE id = ?");
+
+                final Clob textClob = connection.createClob();
+                Writer textStream = null;
+                try {
+                    CharStreams.copy(text, textStream = textClob.setCharacterStream(1));
+                } finally {
+                    Closeables.close(textStream, false);
+                }
+
+                update.setClob(1, textClob);
+                update.setLong(2, ((LayerRelation<?>) target).getId());
+                update.executeUpdate();
+
+            } catch (SQLException e) {
+                throw rollbackAndConvert(connection, e);
+            } finally {
+                SQL.closeQuietly(update);
+                SQL.closeQuietly(connection);
+            }
         }
     }
 

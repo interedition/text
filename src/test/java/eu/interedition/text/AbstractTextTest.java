@@ -19,12 +19,16 @@
  */
 package eu.interedition.text;
 
+import eu.interedition.text.h2.H2TextRepository;
+import eu.interedition.text.h2.SQL;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.simple.SimpleTextRepository;
 import java.io.IOException;
 import java.io.StringReader;
+import java.sql.SQLException;
 import java.util.Collections;
+import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 
 /**
@@ -37,19 +41,56 @@ public abstract class AbstractTextTest extends AbstractTest {
 
     protected static final String TEST_TEXT = "Hello World";
 
-    protected TextRepository<KeyValues> repository = new SimpleTextRepository<KeyValues>();
+    private static H2TextRepository<KeyValues> h2Repository;
+    private static SingleConnectionDataSource h2DataSource;
+
+    protected TextRepository<KeyValues> repository;
 
     /**
      * The in-memory document model to run tests against.
      */
-    protected Layer<KeyValues> layer;
+    private Layer<KeyValues> layer;
+
+    private static H2TextRepository<KeyValues> h2Repository() throws SQLException {
+        if (h2Repository == null) {
+            final StringBuilder url = new StringBuilder("jdbc:h2:mem:text;DB_CLOSE_DELAY=-1");
+            if (System.getProperty("interedition.debug") != null) {
+                url.append(";TRACE_LEVEL_SYSTEM_OUT=2");
+            }
+            h2DataSource = new SingleConnectionDataSource(JdbcConnectionPool.create(url.toString(), "sa", "sa"));
+            h2Repository = new H2TextRepository<KeyValues>(KeyValues.class, h2DataSource, false).withSchema();
+        }
+        return h2Repository;
+    }
+
+    @AfterClass
+    public static void closeDataSource() {
+        h2Repository = null;
+        if (h2DataSource != null && h2DataSource.connection != null) {
+            SQL.closeQuietly(h2DataSource.connection);
+        }
+    }
+
+    @After
+    public void rollback() throws SQLException {
+        if (h2DataSource != null && h2DataSource.connection != null) {
+            h2DataSource.connection.rollback();
+        }
+    }
 
     /**
      * Creates a new document model before every test.
      */
+    public Layer<KeyValues> testText() throws IOException {
+        if (layer == null) {
+            this.layer = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "test"), new StringReader(getTestText()), null);
+        }
+        return layer;
+    }
+
     @Before
-    public void createTestText() throws IOException {
-        this.layer = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "test"), new StringReader(getTestText()), null);
+    public void initRepository() throws SQLException {
+        repository = h2Repository();
     }
 
     /**

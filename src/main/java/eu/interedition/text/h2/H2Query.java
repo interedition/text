@@ -55,7 +55,7 @@ public class H2Query<T> {
                 " FROM interedition_text_layer l" +
                 " JOIN interedition_name n ON n.id = l.name_id" +
                 " LEFT JOIN interedition_text_anchor a ON a.from_id = l.id" +
-                " LEFT JOIN interedition_layer al ON a.to_id = al.id" +
+                " LEFT JOIN interedition_text_layer al ON a.to_id = al.id" +
                 " LEFT JOIN interedition_name an ON an.id = al.name_id" +
                 " " + WITH_SPACES.join(Iterables.filter(joins, Predicates.not(Predicates.equalTo("")))) +
                 " WHERE " + WITH_SPACES.join(Iterables.filter(clauses, Predicates.not(Predicates.equalTo("")))) +
@@ -248,12 +248,13 @@ public class H2Query<T> {
 
         @Override
         public String toString() {
-            final StringBuilder builder = new StringBuilder(relation + ".ln = ").append(name.getLocalName()).append(" AND ");
+            // FIXME: SQL-escape ns and ln argument
+            final StringBuilder builder = new StringBuilder(relation + ".ln = '").append(name.getLocalName()).append("' AND ");
             final URI ns = name.getNamespace();
             if (ns == null) {
                 builder.append(relation).append(".ns IS NULL");
             } else {
-                builder.append(relation).append(".ns = '").append(ns.toString()).append("'"); // FIXME: SQL-escape ns argument
+                builder.append(relation).append(".ns = '").append(ns.toString()).append("'");
             }
             return builder.toString();
         }

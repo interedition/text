@@ -25,7 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.simple.SimpleTextRepository;
+import eu.interedition.text.xml.UpdateableTextRepository;
 import eu.interedition.text.xml.XML;
 import eu.interedition.text.xml.XMLNodePath;
 import eu.interedition.text.xml.XMLSerializerConfiguration;
@@ -238,11 +238,11 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
             }
         }
 
-        @SuppressWarnings("deprecation")
+        @SuppressWarnings("unchecked")
         @Override
         public void write(Layer<KeyValues> target, Reader text) throws IOException {
             try {
-                ((SimpleTextRepository<KeyValues>) repository).updateText(target, text);
+                ((UpdateableTextRepository<KeyValues>) repository).updateText(target, text);
             } catch (IOException e) {
                 throw Throwables.propagate(e);
             }

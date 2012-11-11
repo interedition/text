@@ -17,6 +17,7 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
+import eu.interedition.text.xml.UpdateableTextRepository;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
@@ -28,7 +29,7 @@ import javax.annotation.Nullable;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SimpleTextRepository<T> implements TextRepository<T> {
+public class SimpleTextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T> {
 
     private Set<Layer<T>> contents = Sets.newHashSet();
     private SetMultimap<Text, Layer<T>> targets = HashMultimap.create();
@@ -108,7 +109,6 @@ public class SimpleTextRepository<T> implements TextRepository<T> {
         }
     };
 
-    @Deprecated
     public void updateText(Layer<T> target, Reader text) throws IOException {
         ((SimpleLayer<T>) target).text = CharStreams.toString(text);
     }

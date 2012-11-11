@@ -1,4 +1,4 @@
-package eu.interedition.text.h2;
+package eu.interedition.text;
 
 import java.io.PrintWriter;
 import java.sql.Array;
@@ -31,7 +31,7 @@ class SingleConnectionDataSource implements DataSource {
     private final DataSource ds;
     Connection connection;
 
-    public SingleConnectionDataSource(DataSource ds) {
+    SingleConnectionDataSource(DataSource ds) {
         this.ds = ds;
     }
 

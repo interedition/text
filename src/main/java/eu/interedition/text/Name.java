@@ -43,7 +43,7 @@ public class Name implements Comparable<Name> {
     }
 
     protected Name(String ns, String localName) {
-        this(URI.create(ns), localName);
+        this(ns == null ? null : URI.create(ns), localName);
     }
 
     public URI getNamespace() {

@@ -3,7 +3,7 @@ package eu.interedition.text.h2;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-class SQL {
+public class SQL {
 
     private static void close(AutoCloseable closeable) throws Exception {
         if (closeable != null) {
