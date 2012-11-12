@@ -9,6 +9,7 @@ import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.TextRange;
+import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -68,7 +69,10 @@ public class LayerRelation<T> implements Layer<T> {
         withTextClob(new ClobCallback<Void>() {
             @Override
             public Void withClob(Clob text) throws IOException, SQLException {
-                Reader content = (range == null ? text.getCharacterStream() : text.getCharacterStream(range.getStart() + 1, range.length()));
+                Reader content = text.getCharacterStream();
+                if (range != null) {
+                    content = new RangeFilteringReader(content, range);
+                }
                 try {
                     CharStreams.copy(content, target);
                 } finally {
@@ -181,6 +185,50 @@ public class LayerRelation<T> implements Layer<T> {
             SQL.closeQuietly(resultSet);
             SQL.closeQuietly(query);
             SQL.closeQuietly(connection);
+        }
+    }
+
+    private static class RangeFilteringReader extends FilterReader {
+
+        private final TextRange range;
+        private int offset = 0;
+
+        public RangeFilteringReader(Reader in, TextRange range) {
+            super(in);
+            this.range = range;
+        }
+
+        @Override
+        public int read() throws IOException {
+            while (offset < range.getStart()) {
+                final int read = doRead();
+                if (read < 0) {
+                    return read;
+                }
+            }
+            if (offset >= range.getEnd()) {
+                return -1;
+            }
+
+            return doRead();
+        }
+
+        protected int doRead() throws IOException {
+            final int read = super.read();
+            if (read >= 0) {
+                ++offset;
+            }
+            return read;
+        }
+
+        @Override
+        public int read(char[] cbuf, int off, int len) throws IOException {
+            int read = 0;
+            int last;
+            while ((read < len) && ((last = read()) >= 0)) {
+                cbuf[off + read++] = (char) last;
+            }
+            return ((len > 0 && read == 0) ? -1 : read);
         }
     }
 }

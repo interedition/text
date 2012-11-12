@@ -76,6 +76,9 @@ public abstract class AbstractTextTest extends AbstractTest {
         if (h2DataSource != null && h2DataSource.connection != null) {
             h2DataSource.connection.rollback();
         }
+        if (h2Repository != null) {
+            h2Repository.clearNameCache();
+        }
     }
 
     /**

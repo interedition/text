@@ -3,6 +3,7 @@ package eu.interedition.text.h2;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
@@ -33,6 +34,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 
@@ -45,9 +47,11 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
     private final DataSource ds;
     private final boolean transactional;
 
-    final DataMapper<T> dataMapper = new SerializableDataMapper<T>();
+    private final DataMapper<T> dataMapper = new SerializableDataMapper<T>();
+
     private final H2Query<T> query = new H2Query<T>();
     private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
+    private final Map<Name, NameRelation> nameCache = Maps.newHashMap();
 
     public H2TextRepository(Class<T> dataType, DataSource ds) {
         this(dataType, ds, true);
@@ -77,6 +81,10 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             SQL.closeQuietly(stmt);
             SQL.closeQuietly(connection);
         }
+    }
+
+    public void clearNameCache() {
+        nameCache.clear();
     }
 
     public Layer<T> byId(long id) {
@@ -221,6 +229,11 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             return (NameRelation) name;
         }
 
+        NameRelation result = nameCache.get(name);
+        if (result != null) {
+            return result;
+        }
+
         final String ln = name.getLocalName();
         final URI ns = name.getNamespace();
 
@@ -238,17 +251,18 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             }
             resultSet = findName.executeQuery();
             if (resultSet.next()) {
-                return new NameRelation(ns, ln, resultSet.getLong(1));
+                nameCache.put(name, result = new NameRelation(name, resultSet.getLong(1)));
+            } else {
+                insertName = connection.prepareStatement("insert into interedition_name (id, ln, ns) values (?, ?, ?)");
+                final long id = Iterators.getNext(primaryKeySource, null);
+                insertName.setLong(1, id);
+                insertName.setString(2, ln);
+                insertName.setString(3, ns == null ? null : ns.toString());
+                insertName.executeUpdate();
+                nameCache.put(name, result = new NameRelation(name, id));
             }
 
-            insertName = connection.prepareStatement("insert into interedition_name (id, ln, ns) values (?, ?, ?)");
-            final long id = Iterators.getNext(primaryKeySource, null);
-            insertName.setLong(1, id);
-            insertName.setString(2, ln);
-            insertName.setString(3, ns == null ? null : ns.toString());
-            insertName.executeUpdate();
-
-            return new NameRelation(name, id);
+            return result;
         } finally {
             SQL.closeQuietly(resultSet);
             SQL.closeQuietly(insertName);
@@ -271,6 +285,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
     }
 
     RuntimeException rollbackAndConvert(Connection connection, Throwable t) {
+        clearNameCache();
         if (connection != null && transactional) {
             try {
                 connection.rollback();
