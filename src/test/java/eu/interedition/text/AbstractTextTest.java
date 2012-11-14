@@ -22,6 +22,7 @@ package eu.interedition.text;
 import eu.interedition.text.h2.H2TextRepository;
 import eu.interedition.text.h2.SQL;
 import eu.interedition.text.simple.KeyValues;
+import eu.interedition.text.simple.SimpleTextRepository;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -93,7 +94,14 @@ public abstract class AbstractTextTest extends AbstractTest {
 
     @Before
     public void initRepository() throws SQLException {
-        repository = h2Repository();
+        final String repo = System.getProperty("interedition.text.repo", "mem").toLowerCase();
+        if ("mem".equals(repo)) {
+            repository = new SimpleTextRepository<KeyValues>();
+        } else if ("h2".equals(repo)) {
+            repository = h2Repository();
+        } else {
+            throw new IllegalArgumentException(repo);
+        }
     }
 
     /**

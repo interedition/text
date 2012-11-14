@@ -19,9 +19,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.sql.Blob;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -43,15 +43,18 @@ public class H2Query<T> {
         }
     }
 
-    public String sql(Query query) {
+    public QueryResult<T> results(final H2TextRepository<T> repository, final Query query) {
+
         final Clause clause = build(query.getRoot());
 
         final List<String> joins = Lists.newLinkedList();
         final List<String> clauses = Lists.newLinkedList();
+        final List<String> arguments = Lists.newLinkedList();
         clause.joins(joins, 0);
         clause.clauses(clauses);
+        clause.arguments(arguments);
 
-        return "SELECT l.id, n.ns, n.ln, n.id, l.layer_data, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end" +
+        final String sql = "SELECT l.id, n.ns, n.ln, n.id, l.layer_data, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end" +
                 " FROM interedition_text_layer l" +
                 " JOIN interedition_name n ON n.id = l.name_id" +
                 " LEFT JOIN interedition_text_anchor a ON a.from_id = l.id" +
@@ -60,9 +63,7 @@ public class H2Query<T> {
                 " " + WITH_SPACES.join(Iterables.filter(joins, Predicates.not(Predicates.equalTo("")))) +
                 " WHERE " + WITH_SPACES.join(Iterables.filter(clauses, Predicates.not(Predicates.equalTo("")))) +
                 " ORDER BY l.id, al.id";
-    }
 
-    public QueryResult<T> results(final H2TextRepository<T> repository, final Query query) {
         return new QueryResult<T>() {
 
             Connection connection;
@@ -75,8 +76,8 @@ public class H2Query<T> {
                     }
 
                     return new AbstractIterator<Layer<T>>() {
-                        Statement queryStmt = connection.createStatement();
-                        ResultSet resultSet = queryStmt.executeQuery(sql(query));
+                        PreparedStatement queryStmt;
+                        ResultSet resultSet;
 
                         Set<Anchor> anchors = null;
                         LayerRelation<T> layer = null;
@@ -84,6 +85,14 @@ public class H2Query<T> {
                         @Override
                         protected Layer<T> computeNext() {
                             try {
+                                if (queryStmt == null) {
+                                    queryStmt = connection.prepareStatement(sql);
+                                    int ac = 0;
+                                    for (String argument : arguments) {
+                                        queryStmt.setString(++ac, argument);
+                                    }
+                                    resultSet = queryStmt.executeQuery();
+                                }
                                 Layer<T> result = null;
                                 while (resultSet != null && resultSet.next()) {
                                     final long layerId = resultSet.getLong(1);
@@ -119,8 +128,6 @@ public class H2Query<T> {
                                     SQL.closeQuietly(resultSet);
                                     resultSet = null;
                                     SQL.closeQuietly(queryStmt);
-                                    queryStmt = null;
-
                                     repository.commit(connection);
                                 }
                                 if (result == null && layer != null) {
@@ -196,6 +203,9 @@ public class H2Query<T> {
         public void clauses(List<String> parts) {
             parts.add(toString());
         }
+
+        public void arguments(List<String> arguments) {
+        }
     }
 
     protected class OperatorClause extends Clause {
@@ -213,6 +223,13 @@ public class H2Query<T> {
                 joins = child.joins(parts, joins);
             }
             return joins;
+        }
+
+        @Override
+        public void arguments(List<String> arguments) {
+            for (Clause child : children) {
+                child.arguments(arguments);
+            }
         }
 
         @Override
@@ -256,14 +273,23 @@ public class H2Query<T> {
         }
 
         @Override
+        public void arguments(List<String> arguments) {
+            arguments.add(name.getLocalName());
+            final URI namespace = name.getNamespace();
+            if (namespace != null) {
+                arguments.add(namespace.toString());
+            }
+        }
+
+        @Override
         public String toString() {
             // FIXME: SQL-escape ns and ln argument
-            final StringBuilder builder = new StringBuilder(relation + ".ln = '").append(name.getLocalName()).append("' AND ");
+            final StringBuilder builder = new StringBuilder(relation + ".ln = ? AND ");
             final URI ns = name.getNamespace();
             if (ns == null) {
                 builder.append(relation).append(".ns IS NULL");
             } else {
-                builder.append(relation).append(".ns = '").append(ns.toString()).append("'");
+                builder.append(relation).append(".ns = ?");
             }
             return builder.toString();
         }
@@ -332,7 +358,7 @@ public class H2Query<T> {
 
         @Override
         public String toString() {
-            return (range.getStart() + "<= " + relation + ".range_start AND " + range.getEnd() + " >= " + relation + ".range_end");
+            return (range.getStart() + " <= " + relation + ".range_start AND " + range.getEnd() + " >= " + relation + ".range_end");
         }
     }
 
