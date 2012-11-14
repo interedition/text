@@ -1,7 +1,9 @@
 package eu.interedition.text.h2;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
@@ -156,6 +158,25 @@ public class LayerRelation<T> implements Layer<T> {
                 return text.length();
             }
         });
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof LayerRelation) {
+            LayerRelation<?> other = (LayerRelation<?>) obj;
+            return (id == other.id);
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(name).addValue(Iterables.toString(anchors)).addValue(id).toString();
     }
 
     private interface ClobCallback<R> {

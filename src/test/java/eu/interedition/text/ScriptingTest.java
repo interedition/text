@@ -1,10 +1,8 @@
 package eu.interedition.text;
 
-import java.util.logging.Level;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
 import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
@@ -16,16 +14,6 @@ import org.junit.Test;
 public class ScriptingTest extends AbstractTest {
 
     private final ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
-
-    @Test
-    public void retrieveScriptEngines() {
-        for (ScriptEngineFactory sef : scriptEngineManager.getEngineFactories()) {
-            LOG.log(Level.FINE, "{} {} :: {} {}", new Object[]{sef.getEngineName(), sef.getEngineVersion(), sef.getLanguageName(), sef.getLanguageVersion()});
-            for (String name : sef.getNames()) {
-                LOG.log(Level.FINE, "\t{}", name);
-            }
-        }
-    }
 
     @Test
     public void ecmaScript() throws ScriptException {

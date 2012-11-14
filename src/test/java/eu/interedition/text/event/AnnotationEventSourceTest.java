@@ -56,10 +56,6 @@ public class AnnotationEventSourceTest extends AbstractTestResourceTest {
             LOG.fine("START: [" + offset + "] " + Iterables.toString(annotations));
         }
 
-        public void empty(long offset, Iterable<Layer<KeyValues>> annotations) {
-            LOG.fine("EMPTY: [" + offset + "] " + Iterables.toString(annotations));
-        }
-
         public void end(long offset, Iterable<Layer<KeyValues>> annotations) {
             LOG.fine("END: [" + offset + "] " + Iterables.toString(annotations));
         }

@@ -1,9 +1,10 @@
 package eu.interedition.text.h2;
 
 import com.google.common.base.Throwables;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
@@ -34,8 +35,9 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import javax.sql.DataSource;
 
 /**
@@ -51,7 +53,6 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
 
     private final H2Query<T> query = new H2Query<T>();
     private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
-    private final Map<Name, NameRelation> nameCache = Maps.newHashMap();
 
     public H2TextRepository(Class<T> dataType, DataSource ds) {
         this(dataType, ds, true);
@@ -81,10 +82,6 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             SQL.closeQuietly(stmt);
             SQL.closeQuietly(connection);
         }
-    }
-
-    public void clearNameCache() {
-        nameCache.clear();
     }
 
     public Layer<T> byId(long id) {
@@ -133,7 +130,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             connection = begin();
             insertLayer = connection.prepareStatement("insert into interedition_text_layer (name_id, text_content, layer_data, id) values (?, ?, ?, ?)");
 
-            insertLayer.setLong(1, name(connection, name).getId());
+            insertLayer.setLong(1, name(name).getId());
 
             final Clob textClob = connection.createClob();
             Writer textWriter = null;
@@ -224,51 +221,86 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 
-    NameRelation name(Connection connection, Name name) throws SQLException {
+    NameRelation cachedName(Long id, final NameRelation name) {
+        try {
+            nameCache.put(name, name);
+            return nameIdCache.get(id, new Callable<NameRelation>() {
+                @Override
+                public NameRelation call() throws Exception {
+                    return name;
+                }
+            });
+        } catch (ExecutionException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    NameRelation name(final Name name) throws SQLException {
         if (name instanceof NameRelation) {
             return (NameRelation) name;
         }
-
-        NameRelation result = nameCache.get(name);
-        if (result != null) {
-            return result;
-        }
-
-        final String ln = name.getLocalName();
-        final URI ns = name.getNamespace();
-
-        PreparedStatement findName = null;
-        PreparedStatement insertName = null;
-        ResultSet resultSet = null;
         try {
-            findName = connection.prepareStatement("select id from interedition_name where ln = ? and ns = ?");
+            return nameCache.get(name, new Callable<NameRelation>() {
+                @Override
+                public NameRelation call() throws Exception {
+                    final String ln = name.getLocalName();
+                    final URI ns = name.getNamespace();
 
-            findName.setString(1, ln);
-            if (ns == null) {
-                findName.setNull(2, Types.VARCHAR);
-            } else {
-                findName.setString(2, ns.toString());
-            }
-            resultSet = findName.executeQuery();
-            if (resultSet.next()) {
-                nameCache.put(name, result = new NameRelation(name, resultSet.getLong(1)));
-            } else {
-                insertName = connection.prepareStatement("insert into interedition_name (id, ln, ns) values (?, ?, ?)");
-                final long id = Iterators.getNext(primaryKeySource, null);
-                insertName.setLong(1, id);
-                insertName.setString(2, ln);
-                insertName.setString(3, ns == null ? null : ns.toString());
-                insertName.executeUpdate();
-                nameCache.put(name, result = new NameRelation(name, id));
-            }
+                    Connection connection = null;
+                    PreparedStatement findName = null;
+                    PreparedStatement insertName = null;
+                    ResultSet resultSet = null;
+                    try {
+                        connection = begin();
 
-            return result;
-        } finally {
-            SQL.closeQuietly(resultSet);
-            SQL.closeQuietly(insertName);
-            SQL.closeQuietly(findName);
+                        findName = connection.prepareStatement("select id from interedition_name where ln = ? and ns = ?");
+                        findName.setString(1, ln);
+                        if (ns == null) {
+                            findName.setNull(2, Types.VARCHAR);
+                        } else {
+                            findName.setString(2, ns.toString());
+                        }
+                        resultSet = findName.executeQuery();
+
+                        NameRelation result;
+                        if (resultSet.next()) {
+                            result = new NameRelation(name, resultSet.getLong(1));
+                        } else {
+                            insertName = connection.prepareStatement("insert into interedition_name (id, ln, ns) values (?, ?, ?)");
+                            final long id = Iterators.getNext(primaryKeySource, null);
+                            insertName.setLong(1, id);
+                            insertName.setString(2, ln);
+                            insertName.setString(3, ns == null ? null : ns.toString());
+                            insertName.executeUpdate();
+                            result = new NameRelation(name, id);
+                        }
+
+                        commit(connection);
+
+                        nameIdCache.put(result.getId(), result);
+                        return result;
+                    } catch(SQLException e) {
+                        throw rollbackAndConvert(connection, e);
+                    } finally {
+                        SQL.closeQuietly(resultSet);
+                        SQL.closeQuietly(insertName);
+                        SQL.closeQuietly(findName);
+                    }
+                }
+            });
+        } catch (ExecutionException e) {
+            Throwables.propagateIfInstanceOf(Throwables.getRootCause(e), SQLException.class);
+            throw Throwables.propagate(e);
         }
     }
+
+    public void clearNameCache() {
+        nameCache.invalidateAll();
+        nameIdCache.invalidateAll();
+    }
+
+    private final Cache<Name, NameRelation> nameCache = CacheBuilder.newBuilder().build();
+    private final Cache<Long, NameRelation> nameIdCache = CacheBuilder.newBuilder().build();
 
     Connection begin() throws SQLException {
         final Connection connection = ds.getConnection();
@@ -285,7 +317,6 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
     }
 
     RuntimeException rollbackAndConvert(Connection connection, Throwable t) {
-        clearNameCache();
         if (connection != null && transactional) {
             try {
                 connection.rollback();

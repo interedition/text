@@ -23,6 +23,7 @@ import com.google.common.collect.Iterables;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.simple.KeyValues;
 import java.io.IOException;
@@ -42,8 +43,8 @@ public class AnnotationTest extends AbstractTestResourceTest {
     public void deleteAll() throws IOException {
         final Layer existing = text();
         try {
-            repository.delete(repository.query(and(Query.text(existing), rangeEncloses(new TextRange(0, existing.length())))));
-
+            final QueryResult<KeyValues> layers = repository.query(and(Query.text(existing), rangeEncloses(new TextRange(0, existing.length()))));
+            repository.delete(layers);
             final Iterable<Layer<KeyValues>> remaining = repository.query(Query.text(existing));
             assertTrue(Integer.toString(size(remaining)) + " in " + existing, Iterables.isEmpty(remaining));
         } finally {

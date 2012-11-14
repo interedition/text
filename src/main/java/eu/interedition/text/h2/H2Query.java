@@ -74,9 +74,10 @@ public class H2Query<T> {
                         connection = repository.begin();
                     }
 
-                    final Statement queryStmt = connection.createStatement();
-                    final ResultSet resultSet = queryStmt.executeQuery(sql(query));
                     return new AbstractIterator<Layer<T>>() {
+                        Statement queryStmt = connection.createStatement();
+                        ResultSet resultSet = queryStmt.executeQuery(sql(query));
+
                         Set<Anchor> anchors = null;
                         LayerRelation<T> layer = null;
 
@@ -84,10 +85,9 @@ public class H2Query<T> {
                         protected Layer<T> computeNext() {
                             try {
                                 Layer<T> result = null;
-                                while (resultSet.next()) {
+                                while (resultSet != null && resultSet.next()) {
                                     final long layerId = resultSet.getLong(1);
                                     if (layer == null || layer.getId() != layerId) {
-                                        result = layer;
                                         T data = null;
                                         final Blob dataBlob = resultSet.getBlob(5);
                                         if (dataBlob != null) {
@@ -98,12 +98,15 @@ public class H2Query<T> {
                                                 Closeables.close(dataStream, false);
                                             }
                                         }
-                                        layer = new LayerRelation<T>(new NameRelation(resultSet.getString(2), resultSet.getString(3), resultSet.getLong(4)), anchors = Sets.newHashSet(), data, layerId, repository);
+                                        if (layer != null) {
+                                            result = layer;
+                                        }
+                                        final long layerNameId = resultSet.getLong(4);
+                                        NameRelation layerName = repository.cachedName(layerNameId, new NameRelation(resultSet.getString(2), resultSet.getString(3), layerNameId));
+                                        layer = new LayerRelation<T>(layerName, anchors = Sets.newHashSet(), data, layerId, repository);
                                     }
-                                    if (resultSet.isLast()) {
-                                        result = layer;
-                                    }
-                                    final NameRelation targetName = new NameRelation(resultSet.getString(6), resultSet.getString(7), resultSet.getLong(8));
+                                    final long anchorNameId = resultSet.getLong(8);
+                                    final NameRelation targetName = repository.cachedName(anchorNameId, new NameRelation(resultSet.getString(6), resultSet.getString(7), anchorNameId));
                                     final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), null, resultSet.getLong(9), repository);
                                     final TextRange targetRange = new TextRange(resultSet.getLong(10), resultSet.getLong(11));
                                     anchors.add(new Anchor(target, targetRange));
@@ -112,13 +115,19 @@ public class H2Query<T> {
                                         break;
                                     }
                                 }
-                                if (result == null) {
+                                if (resultSet != null && resultSet.isLast()) {
                                     SQL.closeQuietly(resultSet);
+                                    resultSet = null;
                                     SQL.closeQuietly(queryStmt);
+                                    queryStmt = null;
+
                                     repository.commit(connection);
-                                    return endOfData();
                                 }
-                                return result;
+                                if (result == null && layer != null) {
+                                    result = layer;
+                                    layer = null;
+                                }
+                                return result == null ? endOfData() : result;
                             } catch (SQLException e) {
                                 throw repository.rollbackAndConvert(connection, e);
                             } catch (IOException e) {
