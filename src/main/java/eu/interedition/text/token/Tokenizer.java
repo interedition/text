@@ -22,13 +22,11 @@ package eu.interedition.text.token;
 import eu.interedition.text.Layer;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextStream;
-import java.util.logging.Logger;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class Tokenizer<T> implements TextStream.Listener<T> {
-    private final Logger LOG = Logger.getLogger(getClass().getName());
     private final TokenizerSettings<T> settings;
 
     private boolean afterTokenBoundary = true;

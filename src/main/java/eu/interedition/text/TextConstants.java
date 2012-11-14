@@ -26,19 +26,20 @@ import javax.xml.XMLConstants;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public interface TextConstants {
-  final URI XML_NS_URI = URI.create(XMLConstants.XML_NS_URI);
-  final URI XMLNS_ATTRIBUTE_NS_URI = URI.create(XMLConstants.XMLNS_ATTRIBUTE_NS_URI);
-  final URI TEI_NS = URI.create("http://www.tei-c.org/ns/1.0");
-  final URI INTEREDITION_NS_URI = URI.create("http://interedition.eu/ns");
+    final URI XML_NS_URI = URI.create(XMLConstants.XML_NS_URI);
+    final URI XMLNS_ATTRIBUTE_NS_URI = URI.create(XMLConstants.XMLNS_ATTRIBUTE_NS_URI);
+    final URI TEI_NS = URI.create("http://www.tei-c.org/ns/1.0");
+    final URI INTEREDITION_NS_URI = URI.create("http://interedition.eu/ns");
 
-  final Name XML_ID_ATTR_NAME = new Name(XML_NS_URI, "id");
-  final Name XML_SPACE_ATTR_NAME = new Name(XML_NS_URI, "space");
-  final Name XML_NODE_ATTR_NAME = new Name(XML_NS_URI, "node");
+    final Name XML_ID_ATTR_NAME = new Name(XML_NS_URI, "id");
+    final Name XML_SPACE_ATTR_NAME = new Name(XML_NS_URI, "space");
+    final Name XML_NODE_ATTR_NAME = new Name(XML_NS_URI, "node");
 
-  final URI CLIX_NS = URI.create("http://lmnl.net/clix");
-  final String CLIX_NS_PREFIX = "c";
-  final Name CLIX_START_ATTR_NAME = new Name(CLIX_NS, "sID");
-  final Name CLIX_END_ATTR_NAME = new Name(CLIX_NS, "eID");
+    final URI CLIX_NS = URI.create("http://lmnl.net/clix");
+    final String CLIX_NS_PREFIX = "c";
+    final Name CLIX_START_ATTR_NAME = new Name(CLIX_NS, "sID");
+    final Name CLIX_END_ATTR_NAME = new Name(CLIX_NS, "eID");
 
-  final Name XML_TRANSFORM_NAME = new Name(INTEREDITION_NS_URI, "xmlTransformation");
+    final Name XML_SOURCE_NAME = new Name(INTEREDITION_NS_URI, "xml");
+    final Name XML_TARGET_NAME = new Name(INTEREDITION_NS_URI, "text");
 }

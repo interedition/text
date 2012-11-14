@@ -63,7 +63,8 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import static eu.interedition.text.TextConstants.TEI_NS;
-import static eu.interedition.text.TextConstants.XML_TRANSFORM_NAME;
+import static eu.interedition.text.TextConstants.XML_SOURCE_NAME;
+import static eu.interedition.text.TextConstants.XML_TARGET_NAME;
 
 /**
  * Base class for tests working with documents generated from XML test resources.
@@ -196,7 +197,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
                         }
                     });
                     transformer.transform(new SAXSource(xmlReader, new InputSource(xmlStream = resource.toURL().openStream())), new StreamResult(xmlContent));
-                    final Layer<KeyValues> xml = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "xmlSource"), new StringReader(xmlContent.toString()), null);
+                    final Layer<KeyValues> xml = repository.add(XML_SOURCE_NAME, new StringReader(xmlContent.toString()), null);
                     sources.put(resource, xml);
 
                     texts.put(resource, xmlTransformer.transform(xml));
@@ -232,7 +233,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         @Override
         public Layer<KeyValues> targetFor(Layer source) {
             try {
-                return repository.add(XML_TRANSFORM_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
+                return repository.add(XML_TARGET_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
             } catch (IOException e) {
                 throw Throwables.propagate(e);
             }

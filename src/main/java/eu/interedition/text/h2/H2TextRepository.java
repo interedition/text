@@ -16,13 +16,18 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
+import eu.interedition.text.util.RestorableTextRepository;
 import eu.interedition.text.xml.UpdateableTextRepository;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -41,7 +46,7 @@ import javax.sql.DataSource;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T> {
+public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T>, RestorableTextRepository {
 
     private final Class<T> dataType;
     private final DataSource ds;
@@ -72,6 +77,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             stmt.executeUpdate("create table if not exists interedition_name (id bigint primary key, ln varchar(100) not null, ns varchar(100), unique (ln, ns))");
             stmt.executeUpdate("create table if not exists interedition_text_layer (id bigint primary key, name_id bigint not null references interedition_name (id) on delete cascade, text_content clob not null, layer_data blob)");
             stmt.executeUpdate("create table if not exists interedition_text_anchor (from_id bigint not null references interedition_text_layer (id) on delete cascade, to_id bigint not null references interedition_text_layer (id) on delete cascade, range_start bigint not null, range_end bigint not null)");
+            stmt.executeUpdate("create index if not exists interedition_text_range on interedition_text_anchor (range_start, range_end)");
             commit(connection);
             return this;
         } catch (SQLException e) {
@@ -219,6 +225,71 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 
+    public void backup(Writer to) throws IOException {
+        Connection connection = null;
+        PreparedStatement script = null;
+        ResultSet resultSet = null;
+        try {
+            connection = begin();
+            script = connection.prepareStatement("SCRIPT DROP BLOCKSIZE 10485760");
+            resultSet = script.executeQuery();
+            while (resultSet.next()) {
+                final Reader scriptReader = resultSet.getCharacterStream(1);
+                try {
+                    CharStreams.copy(scriptReader, to);
+                } finally {
+                    Closeables.close(scriptReader, false);
+                }
+                to.write("\n");
+            }
+            commit(connection);
+        } catch (SQLException e) {
+            throw rollbackAndConvert(connection, e);
+        } finally {
+            SQL.closeQuietly(resultSet);
+            SQL.closeQuietly(script);
+            SQL.closeQuietly(connection);
+        }
+    }
+
+    @Override
+    public void restore(File from, Charset charset) throws IOException {
+        Connection connection = null;
+        Statement runScript = null;
+        ResultSet resultSet = null;
+        try {
+            connection = begin();
+            runScript = connection.createStatement();
+            runScript.executeUpdate(String.format("RUNSCRIPT FROM '%s' CHARSET '%s'", from.getPath(), charset.name()));
+            commit(connection);
+        } catch (SQLException e) {
+            throw rollbackAndConvert(connection, e);
+        } finally {
+            SQL.closeQuietly(resultSet);
+            SQL.closeQuietly(runScript);
+            SQL.closeQuietly(connection);
+        }
+    }
+
+    @Override
+    public void restore(Reader from) throws IOException {
+        final File restoreSql = File.createTempFile(getClass().getName() + ".restore", ".sql");
+        restoreSql.deleteOnExit();
+
+        try {
+            final Charset charset = Charset.forName("UTF-8");
+            Writer tempWriter = null;
+            try {
+                CharStreams.copy(from, tempWriter = new OutputStreamWriter(new FileOutputStream(restoreSql), charset));
+            } finally {
+                Closeables.close(tempWriter, false);
+            }
+            restore(restoreSql, charset);
+        } finally {
+            restoreSql.delete();
+        }
+    }
+
     NameRelation cachedName(Long id, final NameRelation name) {
         try {
             nameCache.put(name, name);
@@ -318,7 +389,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         if (connection != null && transactional) {
             try {
                 connection.rollback();
-            } catch (SQLException e1) {
+            } catch (SQLException e) {
             }
         }
         return Throwables.propagate(t);
