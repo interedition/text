@@ -1,4 +1,4 @@
-package eu.interedition.text.data;
+package eu.interedition.text.h2;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -3,7 +3,6 @@ package eu.interedition.text.json;
 import eu.interedition.text.Name;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Map;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonSerializer;
@@ -21,17 +20,11 @@ class NameSerializer extends JsonSerializer<Name> {
 
     @Override
     public void serialize(Name value, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
-        serialize(value, jgen, (Map<URI, String>) null);
-    }
-
-    public static void serialize(Name value, JsonGenerator jgen, Map<URI, String> namespaceMapping) throws IOException {
         jgen.writeStartArray();
 
         final URI ns = value.getNamespace();
         if (ns == null) {
             jgen.writeNull();
-        } else if (namespaceMapping != null && namespaceMapping.containsKey(ns)) {
-            jgen.writeString(namespaceMapping.get(ns));
         } else {
             jgen.writeString(ns.toString());
         }
@@ -39,6 +32,5 @@ class NameSerializer extends JsonSerializer<Name> {
         jgen.writeString(value.getLocalName());
 
         jgen.writeEndArray();
-
     }
 }

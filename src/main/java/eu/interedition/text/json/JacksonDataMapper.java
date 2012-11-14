@@ -1,5 +1,6 @@
-package eu.interedition.text.data;
+package eu.interedition.text.json;
 
+import eu.interedition.text.h2.DataMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

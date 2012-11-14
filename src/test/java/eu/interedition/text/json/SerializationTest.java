@@ -1,15 +1,15 @@
 package eu.interedition.text.json;
 
-import com.google.common.collect.Maps;
 import com.google.common.io.NullOutputStream;
 import eu.interedition.text.AbstractTestResourceTest;
+import eu.interedition.text.Layer;
+import eu.interedition.text.Name;
 import eu.interedition.text.Query;
+import eu.interedition.text.QueryResultTextStream;
 import eu.interedition.text.TextConstants;
-import eu.interedition.text.TextRange;
+import eu.interedition.text.simple.KeyValues;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.URI;
-import java.util.Map;
 import java.util.logging.Level;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -19,7 +19,7 @@ import org.junit.Test;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class JSONSerializerTest extends AbstractTestResourceTest {
+public class SerializationTest extends AbstractTestResourceTest {
 
     @Test
     public void simpleSerialization() throws IOException {
@@ -36,25 +36,12 @@ public class JSONSerializerTest extends AbstractTestResourceTest {
             jg = jf.createJsonGenerator(new NullOutputStream());
         }
 
-        JSONSerializer.serialize(jg, repository, text(), new JSONSerializerConfiguration() {
-            @Override
-            public TextRange getRange() {
-                return null;
-            }
+        final Layer<KeyValues> testText = text();
 
-            @Override
-            public Map<String, URI> getNamespaceMappings() {
-                Map<String, URI> nsMap = Maps.newHashMap();
-                nsMap.put("tei", TextConstants.TEI_NS);
-                nsMap.put("xml", TextConstants.XML_NS_URI);
-                return nsMap;
-            }
+        jg.writeObject(repository.query(Query.text(testText)));
 
-            @Override
-            public Query getQuery() {
-                return Query.any();
-            }
-        });
+        jg.writeObject(new QueryResultTextStream<KeyValues>(repository, testText, Query.name(new Name(TextConstants.TEI_NS, "seg"))));
+
         jg.flush();
 
         if (LOG.isLoggable(Level.FINE)) {

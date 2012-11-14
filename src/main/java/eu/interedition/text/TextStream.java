@@ -14,9 +14,9 @@ public interface TextStream<T> {
 
         void start(long contentLength);
 
-        void start(long offset, Iterable<Layer<T>> annotations);
+        void start(long offset, Iterable<Layer<T>> layers);
 
-        void end(long offset, Iterable<Layer<T>> annotations);
+        void end(long offset, Iterable<Layer<T>> layers);
 
         void text(TextRange r, String text);
 
@@ -30,10 +30,10 @@ public interface TextStream<T> {
         public void start(long contentLength) {
         }
 
-        public void start(long offset, Iterable<Layer<T>> annotations) {
+        public void start(long offset, Iterable<Layer<T>> layers) {
         }
 
-        public void end(long offset, Iterable<Layer<T>> annotations) {
+        public void end(long offset, Iterable<Layer<T>> layers) {
         }
 
         public void text(TextRange r, String text) {
@@ -55,17 +55,17 @@ public interface TextStream<T> {
         }
       }
 
-      public void start(long offset, Iterable<Layer<T>> annotations) {
+      public void start(long offset, Iterable<Layer<T>> layers) {
         try {
-          doStart(offset, annotations);
+          doStart(offset, layers);
         } catch (Exception e) {
           throw Throwables.propagate(e);
         }
       }
 
-      public void end(long offset, Iterable<Layer<T>> annotations) {
+      public void end(long offset, Iterable<Layer<T>> layers) {
         try {
-          doEnd(offset, annotations);
+          doEnd(offset, layers);
         } catch (Exception e) {
           throw Throwables.propagate(e);
         }
@@ -90,10 +90,10 @@ public interface TextStream<T> {
       protected void doStart(long contentLength) throws Exception {
       }
 
-      protected void doStart(long offset, Iterable<Layer<T>> annotations) throws Exception {
+      protected void doStart(long offset, Iterable<Layer<T>> layers) throws Exception {
       }
 
-      protected void doEnd(long offset, Iterable<Layer<T>> annotations) throws Exception {
+      protected void doEnd(long offset, Iterable<Layer<T>> layers) throws Exception {
       }
 
       protected void doText(TextRange r, String text) throws Exception {

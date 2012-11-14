@@ -16,8 +16,6 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
-import eu.interedition.text.data.DataMapper;
-import eu.interedition.text.data.SerializableDataMapper;
 import eu.interedition.text.xml.UpdateableTextRepository;
 import java.io.IOException;
 import java.io.InputStream;
