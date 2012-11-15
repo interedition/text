@@ -22,6 +22,9 @@ package eu.interedition.text.query;
 import com.google.common.base.Joiner;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
+import eu.interedition.text.simple.KeyValues;
+import eu.interedition.text.util.AutoCloseables;
 import org.junit.Test;
 
 import static eu.interedition.text.Query.and;
@@ -34,6 +37,11 @@ public class RangeQueryTest extends AbstractTestResourceTest {
 
   @Test
   public void searchEmptyRanges() {
-    LOG.fine(Joiner.on('\n').join(repository.query(and(Query.text(text()), rangeLength(0)))));
+      final QueryResult<KeyValues> qr = repository.query(and(Query.text(text()), rangeLength(0)));
+      try {
+          LOG.fine(Joiner.on('\n').join(qr));
+      } finally {
+          AutoCloseables.closeQuietly(qr);
+      }
   }
 }

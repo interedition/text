@@ -27,11 +27,13 @@ import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
 import eu.interedition.text.QueryResultTextStream;
 import eu.interedition.text.TextConstants;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRanges;
 import eu.interedition.text.simple.KeyValues;
+import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
@@ -117,18 +119,22 @@ public class TokenizerTest extends AbstractTestResourceTest {
         long read = 0;
 
         final SortedMap<TextRange, Boolean> ranges = Maps.newTreeMap();
-        for (Layer<KeyValues> token : TextRanges.orderingByTarget(layer).immutableSortedCopy(repository.query(and(Query.text(layer), tokenCriterion)))) {
-            for (Anchor anchor : token.getAnchors()) {
-                if (anchor.getText().equals(layer)) {
-                    final TextRange range = anchor.getRange();
-                    if (read < range.getStart()) {
-                        ranges.put(new TextRange(read, range.getStart()), false);
+        final QueryResult<KeyValues> query = repository.query(and(Query.text(layer), tokenCriterion));
+        try {
+            for (Layer<KeyValues> token : TextRanges.orderingByTarget(layer).immutableSortedCopy(query)) {
+                for (Anchor anchor : token.getAnchors()) {
+                    if (anchor.getText().equals(layer)) {
+                        final TextRange range = anchor.getRange();
+                        if (read < range.getStart()) {
+                            ranges.put(new TextRange(read, range.getStart()), false);
+                        }
+                        ranges.put(range, true);
+                        read = range.getEnd();
                     }
-                    ranges.put(range, true);
-                    read = range.getEnd();
                 }
             }
-
+        } finally {
+            AutoCloseables.closeQuietly(query);
         }
 
         final long length = layer.length();

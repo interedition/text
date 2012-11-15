@@ -1,6 +1,7 @@
 package eu.interedition.text.h2;
 
 import com.google.common.base.Preconditions;
+import eu.interedition.text.util.AutoCloseables;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,9 +46,9 @@ class PrimaryKeySource implements Iterable<Long>, Iterator<Long> {
             } catch (SQLException e) {
                 throw repository.rollbackAndConvert(connection, e);
             } finally {
-                SQL.closeQuietly(resultSet);
-                SQL.closeQuietly(nextStatement);
-                SQL.closeQuietly(connection);
+                AutoCloseables.closeQuietly(resultSet);
+                AutoCloseables.closeQuietly(nextStatement);
+                AutoCloseables.closeQuietly(connection);
             }
         }
         return next;

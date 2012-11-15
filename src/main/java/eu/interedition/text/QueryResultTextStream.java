@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import eu.interedition.text.simple.SimpleTextRepository;
+import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
@@ -64,32 +65,36 @@ public class QueryResultTextStream<T> implements TextStream<T> {
                 if ((offset % pageSize) == 0) {
                     pageEnd = Math.min(offset + pageSize, contentLength);
                     final TextRange pageRange = new TextRange(offset, pageEnd);
-                    final Iterable<Layer<T>> pageAnnotations = repository.query(and(query, text(text), rangeOverlap(pageRange)));
-                    for (Layer<T> a : pageAnnotations) {
-                        for (Anchor anchor : a.getAnchors()) {
-                            if (!text.equals(anchor.getText())) {
-                                continue;
-                            }
-                            final TextRange range = anchor.getRange();
-                            final long start = range.getStart();
-                            final long end = range.getEnd();
-                            if (start >= offset) {
-                                Set<Layer<T>> starting = starts.get(start);
-                                if (starting == null) {
-                                    starts.put(start, starting = Sets.newHashSet());
+                    final QueryResult<T> page = repository.query(and(query, text(text), rangeOverlap(pageRange)));
+                    try {
+                        for (Layer<T> a : page) {
+                            for (Anchor anchor : a.getAnchors()) {
+                                if (!text.equals(anchor.getText())) {
+                                    continue;
                                 }
-                                starting.add(a);
-                                annotationData.add(a);
-                            }
-                            if (end <= pageEnd) {
-                                Set<Layer<T>> ending = ends.get(end);
-                                if (ending == null) {
-                                    ends.put(end, ending = Sets.newHashSet());
+                                final TextRange range = anchor.getRange();
+                                final long start = range.getStart();
+                                final long end = range.getEnd();
+                                if (start >= offset) {
+                                    Set<Layer<T>> starting = starts.get(start);
+                                    if (starting == null) {
+                                        starts.put(start, starting = Sets.newHashSet());
+                                    }
+                                    starting.add(a);
+                                    annotationData.add(a);
                                 }
-                                ending.add(a);
-                                annotationData.add(a);
+                                if (end <= pageEnd) {
+                                    Set<Layer<T>> ending = ends.get(end);
+                                    if (ending == null) {
+                                        ends.put(end, ending = Sets.newHashSet());
+                                    }
+                                    ending.add(a);
+                                    annotationData.add(a);
+                                }
                             }
                         }
+                    } finally {
+                        AutoCloseables.closeQuietly(page);
                     }
 
                     next = Math.min(starts.isEmpty() ? contentLength : starts.firstKey(), ends.isEmpty() ? contentLength : ends.firstKey());

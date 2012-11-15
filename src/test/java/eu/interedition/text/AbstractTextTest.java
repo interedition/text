@@ -20,9 +20,9 @@
 package eu.interedition.text;
 
 import eu.interedition.text.h2.H2TextRepository;
-import eu.interedition.text.h2.SQL;
 import eu.interedition.text.simple.KeyValues;
 import eu.interedition.text.simple.SimpleTextRepository;
+import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -68,7 +68,7 @@ public abstract class AbstractTextTest extends AbstractTest {
     public static void closeDataSource() {
         h2Repository = null;
         if (h2DataSource != null && h2DataSource.connection != null) {
-            SQL.closeQuietly(h2DataSource.connection);
+            AutoCloseables.closeQuietly(h2DataSource.connection);
         }
     }
 

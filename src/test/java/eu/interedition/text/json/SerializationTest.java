@@ -5,9 +5,11 @@ import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
 import eu.interedition.text.QueryResultTextStream;
 import eu.interedition.text.TextConstants;
 import eu.interedition.text.simple.KeyValues;
+import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.logging.Level;
@@ -38,7 +40,12 @@ public class SerializationTest extends AbstractTestResourceTest {
 
         final Layer<KeyValues> testText = text();
 
-        jg.writeObject(repository.query(Query.text(testText)));
+        final QueryResult<KeyValues> qr = repository.query(Query.text(testText));
+        try {
+            jg.writeObject(qr);
+        } finally {
+            AutoCloseables.closeQuietly(qr);
+        }
 
         jg.writeObject(new QueryResultTextStream<KeyValues>(repository, testText, Query.name(new Name(TextConstants.TEI_NS, "seg"))));
 

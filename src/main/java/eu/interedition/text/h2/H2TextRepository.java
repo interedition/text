@@ -16,6 +16,7 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
+import eu.interedition.text.util.AutoCloseables;
 import eu.interedition.text.util.RestorableTextRepository;
 import eu.interedition.text.xml.UpdateableTextRepository;
 import java.io.File;
@@ -83,8 +84,8 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
-            SQL.closeQuietly(stmt);
-            SQL.closeQuietly(connection);
+            AutoCloseables.closeQuietly(stmt);
+            AutoCloseables.closeQuietly(connection);
         }
     }
 
@@ -118,8 +119,8 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             } catch (SQLException e) {
                 throw rollbackAndConvert(connection, e);
             } finally {
-                SQL.closeQuietly(deleteStatement);
-                SQL.closeQuietly(connection);
+                AutoCloseables.closeQuietly(deleteStatement);
+                AutoCloseables.closeQuietly(connection);
             }
         }
 
@@ -188,9 +189,9 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
-            SQL.closeQuietly(insertTarget);
-            SQL.closeQuietly(insertLayer);
-            SQL.closeQuietly(connection);
+            AutoCloseables.closeQuietly(insertTarget);
+            AutoCloseables.closeQuietly(insertLayer);
+            AutoCloseables.closeQuietly(connection);
         }
     }
 
@@ -218,8 +219,8 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             } catch (SQLException e) {
                 throw rollbackAndConvert(connection, e);
             } finally {
-                SQL.closeQuietly(update);
-                SQL.closeQuietly(connection);
+                AutoCloseables.closeQuietly(update);
+                AutoCloseables.closeQuietly(connection);
             }
         }
     }
@@ -250,9 +251,9 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
-            SQL.closeQuietly(resultSet);
-            SQL.closeQuietly(script);
-            SQL.closeQuietly(connection);
+            AutoCloseables.closeQuietly(resultSet);
+            AutoCloseables.closeQuietly(script);
+            AutoCloseables.closeQuietly(connection);
         }
     }
 
@@ -269,9 +270,9 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
-            SQL.closeQuietly(resultSet);
-            SQL.closeQuietly(runScript);
-            SQL.closeQuietly(connection);
+            AutoCloseables.closeQuietly(resultSet);
+            AutoCloseables.closeQuietly(runScript);
+            AutoCloseables.closeQuietly(connection);
         }
     }
 
@@ -355,9 +356,9 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
                     } catch(SQLException e) {
                         throw rollbackAndConvert(connection, e);
                     } finally {
-                        SQL.closeQuietly(resultSet);
-                        SQL.closeQuietly(insertName);
-                        SQL.closeQuietly(findName);
+                        AutoCloseables.closeQuietly(resultSet);
+                        AutoCloseables.closeQuietly(insertName);
+                        AutoCloseables.closeQuietly(findName);
                     }
                 }
             });

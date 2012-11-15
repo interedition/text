@@ -14,6 +14,7 @@ import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
+import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -39,7 +40,7 @@ public class H2Query<T> {
         try {
             return Iterables.getOnlyElement(results(repository, Query.is(new LayerRelation<T>(null, null, null, id, repository))));
         } finally {
-            SQL.closeQuietly(results);
+            AutoCloseables.closeQuietly(results);
         }
     }
 
@@ -130,9 +131,9 @@ public class H2Query<T> {
                                     }
                                 }
                                 if (resultSet != null && resultSet.isLast()) {
-                                    SQL.closeQuietly(resultSet);
+                                    AutoCloseables.closeQuietly(resultSet);
                                     resultSet = null;
-                                    SQL.closeQuietly(queryStmt);
+                                    AutoCloseables.closeQuietly(queryStmt);
                                     repository.commit(connection);
                                 }
                                 if (result == null && layer != null) {
@@ -154,7 +155,7 @@ public class H2Query<T> {
 
             @Override
             public void close() throws Exception {
-                SQL.closeQuietly(connection);
+                AutoCloseables.closeQuietly(connection);
                 connection = null;
             }
 

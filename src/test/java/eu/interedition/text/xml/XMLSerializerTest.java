@@ -25,7 +25,10 @@ import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextConstants;
+import eu.interedition.text.simple.KeyValues;
+import eu.interedition.text.util.AutoCloseables;
 import java.io.PrintStream;
 import java.util.List;
 import java.util.logging.Level;
@@ -56,7 +59,12 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
     public void clixSerialize() throws Exception {
         final Layer testLayer = text("wp-orpheus1-clix.xml");
 
-        repository.delete(repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0))));
+        final QueryResult<KeyValues> emptyRanges = repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0)));
+        try {
+            repository.delete(emptyRanges);
+        } finally {
+            AutoCloseables.closeQuietly(emptyRanges);
+        }
 
         XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {
 
@@ -82,7 +90,13 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
     @Test
     public void teiConversion() throws Exception {
         final Layer testLayer = text("george-algabal-tei.xml");
-        repository.delete(repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0))));
+        final QueryResult<KeyValues> emptyRanges = repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0)));
+        try {
+            repository.delete(emptyRanges);
+        } finally {
+            AutoCloseables.closeQuietly(emptyRanges);
+        }
+
         XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {
             public Name getRootName() {
                 return new Name(TEI_NS, "text");
