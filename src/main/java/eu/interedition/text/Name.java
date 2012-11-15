@@ -42,7 +42,7 @@ public class Name implements Comparable<Name> {
         this.localName = name.getLocalPart();
     }
 
-    protected Name(String ns, String localName) {
+    public Name(String ns, String localName) {
         this(ns == null ? null : URI.create(ns), localName);
     }
 

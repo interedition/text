@@ -30,6 +30,7 @@ import eu.interedition.text.TextConstants;
 import eu.interedition.text.simple.KeyValues;
 import eu.interedition.text.util.AutoCloseables;
 import java.io.PrintStream;
+import java.net.URI;
 import java.util.List;
 import java.util.logging.Level;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -76,8 +77,8 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
             @Override
             public List<Name> getHierarchy() {
                 return Lists.newArrayList(
-                        new Name(null, "phr"),
-                        new Name(null, "s")
+                        new Name((URI) null, "phr"),
+                        new Name((URI) null, "s")
                 );
             }
         });

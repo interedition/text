@@ -192,7 +192,7 @@ public class XMLSerializer<T> extends TextStream.ExceptionPropagatingListenerAda
         namespaceMappings.put(namespace, prefix);
         namespaceMappingStack.peek().add(namespace);
         if (prefix.length() == 0) {
-            nsAttributes.put(new Name(null, XMLConstants.XMLNS_ATTRIBUTE), uri);
+            nsAttributes.put(new Name((URI) null, XMLConstants.XMLNS_ATTRIBUTE), uri);
         } else {
             nsAttributes.put(new Name(TextConstants.XMLNS_ATTRIBUTE_NS_URI, prefix), uri);
             xml.startPrefixMapping(prefix, uri);
