@@ -27,7 +27,6 @@ import eu.interedition.text.TextRange;
 import eu.interedition.text.xml.XMLElementStart;
 import eu.interedition.text.xml.XMLEntity;
 import eu.interedition.text.xml.XMLTransformer;
-import eu.interedition.text.xml.XMLTransformerConfiguration;
 import java.util.Map;
 
 /**
@@ -68,9 +67,8 @@ public class CLIXAnnotationXMLTransformerModule<T> extends XMLTransformerModuleA
             final XMLElementStart a = ranges.remove(endId.toString());
             if (a != null) {
                 final TextRange range = new TextRange(a.getOffset(), textOffset);
-
-                final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-                configuration.xmlElement(a.getName(), a.getAttributes(), new Anchor(transformer.getTarget(), range));
+                final Anchor anchor = new Anchor(transformer.getTarget(), range);
+                transformer.getConfiguration().xmlElement(a.getName(), a.getAttributes(), anchor);
             }
         }
     }

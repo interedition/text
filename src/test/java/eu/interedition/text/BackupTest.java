@@ -1,7 +1,7 @@
 package eu.interedition.text;
 
 import com.google.common.io.Closeables;
-import eu.interedition.text.util.RestorableTextRepository;
+import eu.interedition.text.util.BackupSupport;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,10 +17,10 @@ public class BackupTest extends AbstractTestResourceTest {
 
     @Test
     public void backup() throws IOException {
-        if (repository instanceof RestorableTextRepository) {
+        if (repository instanceof BackupSupport) {
             text();
 
-            final RestorableTextRepository restorable = (RestorableTextRepository) repository;
+            final BackupSupport restorable = (BackupSupport) repository;
             final Charset charset = Charset.forName("UTF-8");
 
             final File backupFile = File.createTempFile(getClass() + ".backup", ".sql");

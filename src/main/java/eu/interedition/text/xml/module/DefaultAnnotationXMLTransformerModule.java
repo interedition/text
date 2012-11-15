@@ -23,7 +23,6 @@ import eu.interedition.text.Anchor;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.xml.XMLEntity;
 import eu.interedition.text.xml.XMLTransformer;
-import eu.interedition.text.xml.XMLTransformerConfiguration;
 import java.util.Stack;
 
 /**
@@ -56,9 +55,8 @@ public class DefaultAnnotationXMLTransformerModule<T> extends XMLTransformerModu
   public void end(XMLTransformer<T> transformer, XMLEntity entity) {
     if (transformer.getInclusionContext().peek()) {
         final TextRange range = new TextRange(startOffsetStack.pop(), transformer.getTextOffset());
-
-        final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-        configuration.xmlElement(entity.getName(), entity.getAttributes(), new Anchor(transformer.getTarget(), range));
+        final Anchor anchor = new Anchor(transformer.getTarget(), range);
+        transformer.getConfiguration().xmlElement(entity.getName(), entity.getAttributes(), anchor);
     }
     super.end(transformer, entity);
   }

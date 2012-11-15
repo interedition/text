@@ -25,7 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.xml.UpdateableTextRepository;
+import eu.interedition.text.simple.SimpleLayer;
 import eu.interedition.text.xml.XML;
 import eu.interedition.text.xml.XMLNodePath;
 import eu.interedition.text.xml.XMLSerializerConfiguration;
@@ -40,7 +40,6 @@ import eu.interedition.text.xml.module.TEIAwareAnnotationXMLTransformerModule;
 import eu.interedition.text.xml.module.TextXMLTransformerModule;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
@@ -48,6 +47,7 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Transformer;
@@ -64,7 +64,6 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 import static eu.interedition.text.TextConstants.TEI_NS;
 import static eu.interedition.text.TextConstants.XML_SOURCE_NAME;
-import static eu.interedition.text.TextConstants.XML_TARGET_NAME;
 
 /**
  * Base class for tests working with documents generated from XML test resources.
@@ -164,7 +163,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
     }
 
     XMLTransformerConfigurationBase<KeyValues> createXMLParserConfiguration() {
-        XMLTransformerConfigurationBase<KeyValues> pc = new XMLTransformerConfiguration();
+        XMLTransformerConfigurationBase<KeyValues> pc = new XMLTransformerConfiguration(repository).withBatchSize(1024);
 
         final List<XMLTransformerModule<KeyValues>> modules = pc.getModules();
         modules.add(new LineElementXMLTransformerModule<KeyValues>());
@@ -230,36 +229,17 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
 
     protected class XMLTransformerConfiguration extends XMLTransformerConfigurationBase<KeyValues> {
 
-        @Override
-        public Layer<KeyValues> targetFor(Layer source) {
-            try {
-                return repository.add(XML_TARGET_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
-            } catch (IOException e) {
-                throw Throwables.propagate(e);
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public void write(Layer<KeyValues> target, Reader text) throws IOException {
-            try {
-                ((UpdateableTextRepository<KeyValues>) repository).updateText(target, text);
-            } catch (IOException e) {
-                throw Throwables.propagate(e);
-            }
+        protected XMLTransformerConfiguration(TextRepository<KeyValues> repository) {
+            super(repository);
         }
 
         @Override
-        public Layer<KeyValues> xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors) {
-            try {
-                final KeyValues kv = new KeyValues();
-                for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
-                    kv.put(attr.getKey().toString(), attr.getValue());
-                }
-                return repository.add(name, new StringReader(""), kv, anchors);
-            } catch (IOException e) {
-                throw Throwables.propagate(e);
+        protected Layer<KeyValues> translate(Name name, Map<Name, Object> attributes, Set<Anchor> anchors) {
+            final KeyValues kv = new KeyValues();
+            for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
+                kv.put(attr.getKey().toString(), attr.getValue());
             }
+            return new SimpleLayer<KeyValues>(name, "", kv, anchors);
         }
     }
 

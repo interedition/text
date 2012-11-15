@@ -49,9 +49,9 @@ public interface XMLTransformerConfiguration<T> {
 
     boolean isRemoveLeadingWhitespace();
 
-    Layer<T> targetFor(Layer<T> source);
+    Layer<T> start(Layer<T> source) throws IOException;
 
-    void write(Layer<T> target, Reader text) throws IOException;
+    void xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors);
 
-    Layer<T> xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors);
+    void end(Layer<T> target, Reader text) throws IOException;
 }

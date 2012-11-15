@@ -19,19 +19,28 @@
  */
 package eu.interedition.text.xml;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
+import eu.interedition.text.TextRange;
+import eu.interedition.text.TextRepository;
+import eu.interedition.text.util.BatchLayerAdditionSupport;
+import eu.interedition.text.util.UpdateSupport;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class XMLTransformerConfigurationBase<T> implements XMLTransformerConfiguration<T> {
+import static eu.interedition.text.TextConstants.XML_TARGET_NAME;
 
+public abstract class XMLTransformerConfigurationBase<T> implements XMLTransformerConfiguration<T> {
     private Set<Name> excluded = Sets.newHashSet();
     private Set<Name> included = Sets.newHashSet();
     private Set<Name> lineElements = Sets.newHashSet();
@@ -42,6 +51,21 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
     private int textBufferSize = 102400;
     private boolean removeLeadingWhitespace = true;
     private List<XMLTransformerModule<T>> modules = Lists.newArrayList();
+
+    private final TextRepository<T> repository;
+    private List<Layer<T>> batch;
+    private int batchSize = 1;
+
+    protected XMLTransformerConfigurationBase(TextRepository<T> repository) {
+        this.repository = repository;
+    }
+
+    public XMLTransformerConfigurationBase<T> withBatchSize(int batchSize) {
+        Preconditions.checkArgument(batchSize < 2 || repository instanceof BatchLayerAdditionSupport);
+        this.batchSize = Math.max(1, batchSize);
+        this.batch = Lists.newArrayListWithCapacity(this.batchSize);
+        return this;
+    }
 
     public void addLineElement(Name lineElementName) {
         lineElements.add(lineElementName);
@@ -131,9 +155,38 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
         this.removeLeadingWhitespace = removeLeadingWhitespace;
     }
 
-    public abstract Layer<T> targetFor(Layer source);
+    @Override
+    public Layer<T> start(Layer source) throws IOException {
+        return repository.add(XML_TARGET_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
+    }
 
-    public abstract Layer<T> xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors);
+    @SuppressWarnings("unchecked")
+    public void xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors) {
+        try {
+            final Layer<T> layer = translate(name, attributes, Sets.newHashSet(Arrays.asList(anchors)));
+            if (batchSize > 1) {
+                batch.add(layer);
+                if (batch.size() >= batchSize) {
+                    ((BatchLayerAdditionSupport<T>) repository).add(batch);
+                    batch.clear();
+                }
+            } else {
+                repository.add(layer.getName(), new StringReader(""), layer.data(), layer.getAnchors());
+            }
+        } catch (IOException e) {
+            Throwables.propagate(e);
+        }
+    }
 
-    public abstract void write(Layer<T> target, Reader text) throws IOException;
+    @SuppressWarnings("unchecked")
+    public void end(Layer<T> target, Reader text) throws IOException {
+        if (!batch.isEmpty()) {
+            ((BatchLayerAdditionSupport<T>) repository).add(batch);
+        }
+        if (repository instanceof UpdateSupport) {
+            ((UpdateSupport<T>) repository).updateText(target, text);
+        }
+    }
+
+    protected abstract Layer<T> translate(Name name, Map<Name, Object> attributes, Set<Anchor> anchors);
 }

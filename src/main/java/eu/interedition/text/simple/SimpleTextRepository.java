@@ -18,12 +18,15 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
-import eu.interedition.text.xml.UpdateableTextRepository;
+import eu.interedition.text.util.BatchLayerAdditionSupport;
+import eu.interedition.text.util.UpdateSupport;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -31,10 +34,19 @@ import javax.annotation.Nullable;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SimpleTextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T> {
+public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport<T>, BatchLayerAdditionSupport<T> {
 
     private Map<Long, Layer<T>> contents = Maps.newHashMap();
     private SetMultimap<Text, Layer<T>> targets = HashMultimap.create();
+
+    @Override
+    public Iterable<Layer<T>> add(Iterable<Layer<T>> batch) throws IOException {
+        final List<Layer<T>> added = Lists.newLinkedList();
+        for (Layer<T> layer : batch) {
+            added.add(add(layer.getName(), new StringReader(CharStreams.toString(layer.read())), layer.data(), layer.getAnchors()));
+        }
+        return added;
+    }
 
     public Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException {
         final SimpleLayer<T> added = new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors);

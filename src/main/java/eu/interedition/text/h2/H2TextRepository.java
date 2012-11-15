@@ -5,6 +5,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
@@ -17,8 +18,9 @@ import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
 import eu.interedition.text.util.AutoCloseables;
-import eu.interedition.text.util.RestorableTextRepository;
-import eu.interedition.text.xml.UpdateableTextRepository;
+import eu.interedition.text.util.BackupSupport;
+import eu.interedition.text.util.BatchLayerAdditionSupport;
+import eu.interedition.text.util.UpdateSupport;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,8 +40,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import javax.sql.DataSource;
@@ -47,7 +53,7 @@ import javax.sql.DataSource;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T>, RestorableTextRepository {
+public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>, BackupSupport, BatchLayerAdditionSupport<T> {
 
     private final Class<T> dataType;
     private final DataSource ds;
@@ -127,72 +133,143 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
     }
 
     @Override
-    public Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException {
+    public Iterable<Layer<T>> add(Iterable<Layer<T>> batch) throws IOException {
+        final List<Layer<T>> added = Lists.newLinkedList();
+
         Connection connection = null;
         PreparedStatement insertLayer = null;
-        PreparedStatement insertTarget = null;
+        PreparedStatement insertAnchor = null;
         try {
-            connection = begin();
-            insertLayer = connection.prepareStatement("insert into interedition_text_layer (name_id, text_content, layer_data, id) values (?, ?, ?, ?)");
-
-            insertLayer.setLong(1, name(name).getId());
-
-            final Clob textClob = connection.createClob();
-            Writer textWriter = null;
-            try {
-                CharStreams.copy(text, textWriter = textClob.setCharacterStream(1));
-            } finally {
-                Closeables.close(textWriter, false);
-            }
-            insertLayer.setClob(2, textClob);
-
-            if (data != null) {
-                final Blob dataBlob = connection.createBlob();
-                OutputStream dataStream = null;
-                try {
-                    dataMapper.serialize(data, dataStream = dataBlob.setBinaryStream(1));
-                } finally {
-                    Closeables.close(dataStream, false);
+            for (Layer<T> layer : batch) {
+                if (connection == null) {
+                    connection = begin();
                 }
-                insertLayer.setBlob(3, dataBlob);
-            } else {
-                insertLayer.setNull(3, Types.BLOB);
-            }
+                if (insertLayer == null) {
+                    insertLayer = connection.prepareStatement("insert into interedition_text_layer (name_id, text_content, layer_data, id) values (?, ?, ?, ?)");
+                }
 
-            final long id = Iterators.getNext(primaryKeySource, null);
-            insertLayer.setLong(4, id);
+                final NameRelation nameRelation = name(layer.getName());
+                insertLayer.setLong(1, nameRelation.getId());
 
-            insertLayer.executeUpdate();
+                final Clob textClob = connection.createClob();
+                Writer textWriter = null;
+                try {
+                    layer.read(textWriter = textClob.setCharacterStream(1));
+                } finally {
+                    Closeables.close(textWriter, false);
+                }
+                insertLayer.setClob(2, textClob);
 
-            final Set<Anchor> mappedAnchors = Sets.newHashSet();
-            if (!anchors.isEmpty()) {
-                insertTarget = connection.prepareStatement("insert into interedition_text_anchor (id, from_id, to_id, range_start, range_end) values (?, ?, ?, ?, ?)");
+                final T data = layer.data();
+                if (data != null) {
+                    final Blob dataBlob = connection.createBlob();
+                    OutputStream dataStream = null;
+                    try {
+                        dataMapper.serialize(data, dataStream = dataBlob.setBinaryStream(1));
+                    } finally {
+                        Closeables.close(dataStream, false);
+                    }
+                    insertLayer.setBlob(3, dataBlob);
+                } else {
+                    insertLayer.setNull(3, Types.BLOB);
+                }
+
+                final long id = Iterators.getNext(primaryKeySource, null);
+                insertLayer.setLong(4, id);
+
+                insertLayer.addBatch();
+
+                final Set<Anchor> anchors = layer.getAnchors();
+                final Set<Anchor> mappedAnchors = Sets.newHashSet();
                 for (Anchor anchor : anchors) {
                     final Text anchorText = anchor.getText();
                     if (anchorText instanceof LayerRelation) {
+                        if (insertAnchor == null) {
+                            insertAnchor = connection.prepareStatement("insert into interedition_text_anchor (id, from_id, to_id, range_start, range_end) values (?, ?, ?, ?, ?)");
+                        }
                         final long anchorId = Iterators.getNext(primaryKeySource, null);
                         final TextRange anchorRange = anchor.getRange();
-                        insertTarget.setLong(1, anchorId);
-                        insertTarget.setLong(2, id);
-                        insertTarget.setLong(3, ((LayerRelation<?>) anchorText).getId());
-                        insertTarget.setLong(4, anchorRange.getStart());
-                        insertTarget.setLong(5, anchorRange.getEnd());
-                        insertTarget.executeUpdate();
+                        insertAnchor.setLong(1, anchorId);
+                        insertAnchor.setLong(2, id);
+                        insertAnchor.setLong(3, ((LayerRelation<?>) anchorText).getId());
+                        insertAnchor.setLong(4, anchorRange.getStart());
+                        insertAnchor.setLong(5, anchorRange.getEnd());
+                        insertAnchor.addBatch();
                         mappedAnchors.add(new AnchorRelation(anchorText, anchorRange, anchorId));
                     }
                 }
+
+                added.add(new LayerRelation<T>(nameRelation, mappedAnchors, data, id, this));
             }
 
-            commit(connection);
+            if (insertLayer != null) {
+                insertLayer.executeBatch();
+            }
+            if (insertAnchor != null) {
+                insertAnchor.executeBatch();
+            }
+            if (connection != null) {
+                commit(connection);
+            }
 
-            return new LayerRelation<T>(name, mappedAnchors, data, id, this);
+            return added;
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
-            AutoCloseables.closeQuietly(insertTarget);
+            AutoCloseables.closeQuietly(insertAnchor);
             AutoCloseables.closeQuietly(insertLayer);
             AutoCloseables.closeQuietly(connection);
         }
+    }
+
+    @Override
+    public Layer<T> add(final Name name, final Reader text, final T data, final Set<Anchor> anchors) throws IOException {
+        return Iterables.getOnlyElement(add(Collections.<Layer<T>>singleton(new Layer<T>() {
+            @Override
+            public Set<Anchor> getAnchors() {
+                return anchors;
+            }
+
+            @Override
+            public T data() {
+                return data;
+            }
+
+            @Override
+            public Name getName() {
+                return name;
+            }
+
+            @Override
+            public void read(Writer target) throws IOException {
+                CharStreams.copy(text, target);
+            }
+
+            @Override
+            public void read(TextRange range, Writer target) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Reader read() throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Reader read(TextRange range) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public SortedMap<TextRange, String> read(SortedSet<TextRange> textRanges) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public long length() {
+                throw new UnsupportedOperationException();
+            }
+        })));
     }
 
     @Override

@@ -72,7 +72,7 @@ public class XMLTransformer<T> {
 
     public Layer<T> transform(Layer<T> source) throws IOException, XMLStreamException {
         this.source = source;
-        this.target = configuration.targetFor(source);
+        this.target = configuration.start(source);
 
         try {
             Reader xmlReader = null;
@@ -121,7 +121,7 @@ public class XMLTransformer<T> {
             }
             Reader textReader = null;
             try {
-                configuration.write(target, textReader = read());
+                configuration.end(target, textReader = read());
                 return target;
             } finally {
                 Closeables.close(textReader, false);

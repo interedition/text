@@ -9,7 +9,7 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public interface RestorableTextRepository {
+public interface BackupSupport {
 
     void backup(Writer to) throws IOException;
 
