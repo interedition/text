@@ -54,7 +54,7 @@ public class H2Query<T> {
         clause.clauses(clauses);
         clause.arguments(arguments);
 
-        final String sql = "SELECT l.id, n.ns, n.ln, n.id, l.layer_data, an.ns, an.ln, an.id, al.id, a.range_start, a.range_end" +
+        final String sql = "SELECT l.id, n.ns, n.ln, n.id, l.layer_data, an.ns, an.ln, an.id, al.id, a.id, a.range_start, a.range_end" +
                 " FROM interedition_text_layer l" +
                 " JOIN interedition_name n ON n.id = l.name_id" +
                 " LEFT JOIN interedition_text_anchor a ON a.from_id = l.id" +
@@ -81,6 +81,7 @@ public class H2Query<T> {
 
                         Set<Anchor> anchors = null;
                         LayerRelation<T> layer = null;
+                        AnchorRelation anchor = null;
 
                         @Override
                         protected Layer<T> computeNext() {
@@ -113,12 +114,16 @@ public class H2Query<T> {
                                         final long layerNameId = resultSet.getLong(4);
                                         NameRelation layerName = repository.cachedName(layerNameId, new NameRelation(resultSet.getString(2), resultSet.getString(3), layerNameId));
                                         layer = new LayerRelation<T>(layerName, anchors = Sets.newHashSet(), data, layerId, repository);
+                                        anchor = null;
                                     }
-                                    final long anchorNameId = resultSet.getLong(8);
-                                    final NameRelation targetName = repository.cachedName(anchorNameId, new NameRelation(resultSet.getString(6), resultSet.getString(7), anchorNameId));
-                                    final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), null, resultSet.getLong(9), repository);
-                                    final TextRange targetRange = new TextRange(resultSet.getLong(10), resultSet.getLong(11));
-                                    anchors.add(new Anchor(target, targetRange));
+                                    final long anchorId = resultSet.getLong(10);
+                                    if (anchorId != 0 && (anchor == null || anchor.getId() != anchorId)) {
+                                        final long anchorNameId = resultSet.getLong(8);
+                                        final NameRelation targetName = repository.cachedName(anchorNameId, new NameRelation(resultSet.getString(6), resultSet.getString(7), anchorNameId));
+                                        final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), null, resultSet.getLong(9), repository);
+                                        final TextRange targetRange = new TextRange(resultSet.getLong(11), resultSet.getLong(12));
+                                        anchors.add(anchor = new AnchorRelation(target, targetRange, anchorId));
+                                    }
 
                                     if (result != null) {
                                         break;

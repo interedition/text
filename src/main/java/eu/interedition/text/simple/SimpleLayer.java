@@ -17,22 +17,26 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class SimpleLayer<T> implements Layer<T> {
+    private static final AtomicLong ID_SOURCE = new AtomicLong();
 
     private final Name name;
     String text;
     private final Set<Anchor> anchors;
     private final T data;
+    private final long id;
 
     public SimpleLayer(Name name, String text, T data, Set<Anchor> anchors) {
         this.name = name;
         this.text = text;
         this.data = data;
         this.anchors = Collections.unmodifiableSet(anchors);
+        this.id = ID_SOURCE.addAndGet(1);
     }
 
     public SimpleLayer(Name name, String text, T data, Anchor... anchors) {
@@ -52,6 +56,10 @@ public class SimpleLayer<T> implements Layer<T> {
     @Override
     public T data() {
         return data;
+    }
+
+    public long getId() {
+        return id;
     }
 
     @Override
@@ -91,5 +99,18 @@ public class SimpleLayer<T> implements Layer<T> {
     @Override
     public String toString() {
         return Objects.toStringHelper(this).addValue(name).addValue(Iterables.toString(anchors)).toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof SimpleLayer) {
+            return id == ((SimpleLayer) obj).id;
+        }
+        return super.equals(obj);
     }
 }

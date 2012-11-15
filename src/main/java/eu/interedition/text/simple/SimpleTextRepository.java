@@ -6,6 +6,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
@@ -23,6 +24,7 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 
@@ -31,7 +33,7 @@ import javax.annotation.Nullable;
  */
 public class SimpleTextRepository<T> implements TextRepository<T>, UpdateableTextRepository<T> {
 
-    private Set<Layer<T>> contents = Sets.newHashSet();
+    private Map<Long, Layer<T>> contents = Maps.newHashMap();
     private SetMultimap<Text, Layer<T>> targets = HashMultimap.create();
 
     public Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException {
@@ -39,7 +41,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateableTex
         for (Anchor anchor : anchors) {
             this.targets.put(anchor.getText(), added);
         }
-        contents.add(added);
+        contents.put(added.getId(), added);
         return added;
     }
 
@@ -49,13 +51,14 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateableTex
 
     @Override
     public QueryResult<T> query(Query query) {
-        return new SimpleQueryResult<T>(Iterables.filter(contents, TO_PREDICATE.apply(query.getRoot())));
+        return new SimpleQueryResult<T>(Iterables.filter(contents.values(), TO_PREDICATE.apply(query.getRoot())));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void delete(Iterable<Layer<T>> layers) {
-        for (Layer<T> layer : Lists.newLinkedList(layers)) {
-            if (contents.remove(layer)) {
+        for (SimpleLayer<T> layer : Lists.newLinkedList(Iterables.filter(layers, SimpleLayer.class))) {
+            if (contents.remove(layer.getId()) != null) {
                 for (Layer<T> dependent : targets.removeAll(layer)) {
                     delete(Collections.singleton(dependent));
                 }

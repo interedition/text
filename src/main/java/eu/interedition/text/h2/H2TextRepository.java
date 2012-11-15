@@ -76,7 +76,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
             stmt.executeUpdate("create sequence if not exists interedition_text_id");
             stmt.executeUpdate("create table if not exists interedition_name (id bigint primary key, ln varchar(100) not null, ns varchar(100), unique (ln, ns))");
             stmt.executeUpdate("create table if not exists interedition_text_layer (id bigint primary key, name_id bigint not null references interedition_name (id) on delete cascade, text_content clob not null, layer_data blob)");
-            stmt.executeUpdate("create table if not exists interedition_text_anchor (from_id bigint not null references interedition_text_layer (id) on delete cascade, to_id bigint not null references interedition_text_layer (id) on delete cascade, range_start bigint not null, range_end bigint not null)");
+            stmt.executeUpdate("create table if not exists interedition_text_anchor (id bigint primary key, from_id bigint not null references interedition_text_layer (id) on delete cascade, to_id bigint not null references interedition_text_layer (id) on delete cascade, range_start bigint not null, range_end bigint not null)");
             stmt.executeUpdate("create index if not exists interedition_text_range on interedition_text_anchor (range_start, range_end)");
             commit(connection);
             return this;
@@ -163,24 +163,28 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateableTextRep
 
             insertLayer.executeUpdate();
 
+            final Set<Anchor> mappedAnchors = Sets.newHashSet();
             if (!anchors.isEmpty()) {
-                insertTarget = connection.prepareStatement("insert into interedition_text_anchor (from_id, to_id, range_start, range_end) values (?, ?, ?, ?)");
-            }
-            for (Anchor anchor : anchors) {
-                final Text anchorText = anchor.getText();
-                if (anchorText instanceof LayerRelation) {
-                    final TextRange anchorRange = anchor.getRange();
-                    insertTarget.setLong(1, id);
-                    insertTarget.setLong(2, ((LayerRelation<?>) anchorText).getId());
-                    insertTarget.setLong(3, anchorRange.getStart());
-                    insertTarget.setLong(4, anchorRange.getEnd());
-                    insertTarget.executeUpdate();
+                insertTarget = connection.prepareStatement("insert into interedition_text_anchor (id, from_id, to_id, range_start, range_end) values (?, ?, ?, ?, ?)");
+                for (Anchor anchor : anchors) {
+                    final Text anchorText = anchor.getText();
+                    if (anchorText instanceof LayerRelation) {
+                        final long anchorId = Iterators.getNext(primaryKeySource, null);
+                        final TextRange anchorRange = anchor.getRange();
+                        insertTarget.setLong(1, anchorId);
+                        insertTarget.setLong(2, id);
+                        insertTarget.setLong(3, ((LayerRelation<?>) anchorText).getId());
+                        insertTarget.setLong(4, anchorRange.getStart());
+                        insertTarget.setLong(5, anchorRange.getEnd());
+                        insertTarget.executeUpdate();
+                        mappedAnchors.add(new AnchorRelation(anchorText, anchorRange, anchorId));
+                    }
                 }
             }
 
             commit(connection);
 
-            return new LayerRelation<T>(name, anchors, null, id, this);
+            return new LayerRelation<T>(name, mappedAnchors, data, id, this);
         } catch (SQLException e) {
             throw rollbackAndConvert(connection, e);
         } finally {
