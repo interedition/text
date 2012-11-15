@@ -95,7 +95,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
         }
     }
 
-    public Layer<T> byId(long id) {
+    public Layer<T> findByIdentifier(long id) {
         return query.byId(this, id);
     }
 

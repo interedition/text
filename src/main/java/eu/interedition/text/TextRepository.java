@@ -9,6 +9,8 @@ import java.util.Set;
  */
 public interface TextRepository<T> {
 
+    Layer<T> findByIdentifier(long id);
+
     QueryResult<T> query(Query query);
 
     Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException;

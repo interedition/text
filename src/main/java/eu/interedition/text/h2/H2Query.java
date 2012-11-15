@@ -38,7 +38,7 @@ public class H2Query<T> {
     public Layer<T> byId(H2TextRepository<T> repository, long id) {
         QueryResult<T> results = null;
         try {
-            return Iterables.getOnlyElement(results(repository, Query.is(new LayerRelation<T>(null, null, null, id, repository))));
+            return Iterables.getOnlyElement(results(repository, Query.is(new LayerRelation<T>(null, null, null, id, repository))), null);
         } finally {
             AutoCloseables.closeQuietly(results);
         }

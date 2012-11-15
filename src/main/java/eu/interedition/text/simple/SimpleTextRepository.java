@@ -40,6 +40,11 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
     private SetMultimap<Text, Layer<T>> targets = HashMultimap.create();
 
     @Override
+    public Layer<T> findByIdentifier(long id) {
+        return contents.get(id);
+    }
+
+    @Override
     public Iterable<Layer<T>> add(Iterable<Layer<T>> batch) throws IOException {
         final List<Layer<T>> added = Lists.newLinkedList();
         for (Layer<T> layer : batch) {
