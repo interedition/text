@@ -16,7 +16,6 @@ import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.Blob;
@@ -68,7 +67,12 @@ public class LayerRelation<T> implements Layer<T> {
     }
 
     @Override
-    public void read(final TextRange range, final Writer target) throws IOException {
+    public void stream(Consumer consumer) throws IOException {
+         stream(null, consumer);
+    }
+
+    @Override
+    public void stream(final TextRange range, final Consumer consumer) throws IOException {
         withTextClob(new ClobCallback<Void>() {
             @Override
             public Void withClob(Clob text) throws IOException, SQLException {
@@ -77,7 +81,7 @@ public class LayerRelation<T> implements Layer<T> {
                     content = new RangeFilteringReader(content, range);
                 }
                 try {
-                    CharStreams.copy(content, target);
+                    consumer.consume(content);
                 } finally {
                     Closeables.close(content, false);
                 }
@@ -87,15 +91,25 @@ public class LayerRelation<T> implements Layer<T> {
     }
 
     @Override
-    public Reader read() throws IOException {
+    public void read(final TextRange range, final Writer target) throws IOException {
+        stream(range, new Consumer() {
+            @Override
+            public void consume(Reader text) throws IOException {
+                CharStreams.copy(text, target);
+            }
+        });
+    }
+
+    @Override
+    public String read() throws IOException {
         return read((TextRange) null);
     }
 
     @Override
-    public Reader read(TextRange range) throws IOException {
+    public String read(TextRange range) throws IOException {
         final StringWriter buf = new StringWriter();
         read(range, buf);
-        return new StringReader(buf.toString());
+        return buf.toString();
     }
 
 

@@ -15,12 +15,23 @@ public interface Text {
 
     void read(TextRange range, Writer target) throws IOException;
 
-    Reader read() throws IOException;
+    void stream(Consumer consumer) throws IOException;
 
-    Reader read(TextRange range) throws IOException;
+    void stream(TextRange range, Consumer consumer) throws IOException;
+
+    String read() throws IOException;
+
+    String read(TextRange range) throws IOException;
 
     SortedMap<TextRange,String> read(SortedSet<TextRange> textRanges);
 
     long length();
+
+
+    interface Consumer {
+
+        void consume(Reader text) throws IOException;
+
+    }
 
 }

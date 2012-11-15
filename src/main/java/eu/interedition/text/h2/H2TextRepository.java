@@ -251,12 +251,22 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
             }
 
             @Override
-            public Reader read() throws IOException {
+            public void stream(Consumer consumer) throws IOException {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public Reader read(TextRange range) throws IOException {
+            public void stream(TextRange range, Consumer consumer) throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String read() throws IOException {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String read(TextRange range) throws IOException {
                 throw new UnsupportedOperationException();
             }
 

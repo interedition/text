@@ -4,7 +4,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.io.Closeables;
 import eu.interedition.text.simple.SimpleTextRepository;
 import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
@@ -48,91 +47,91 @@ public class QueryResultTextStream<T> implements TextStream<T> {
     @Override
     public void stream(final Listener<T> listener) throws IOException {
         final long contentLength = text.length();
-        Reader contentStream = null;
-        try {
-            contentStream = text.read();
-            final SortedMap<Long, Set<Layer<T>>> starts = Maps.newTreeMap();
-            final SortedMap<Long, Set<Layer<T>>> ends = Maps.newTreeMap();
+        text.stream(new Text.Consumer() {
+            @Override
+            public void consume(Reader textReader) throws IOException {
+                final SortedMap<Long, Set<Layer<T>>> starts = Maps.newTreeMap();
+                final SortedMap<Long, Set<Layer<T>>> ends = Maps.newTreeMap();
 
-            long offset = 0;
-            long next = 0;
-            long pageEnd = 0;
+                long offset = 0;
+                long next = 0;
+                long pageEnd = 0;
 
-            listener.start(contentLength);
+                listener.start(contentLength);
 
-            final Set<Layer<T>> annotationData = Sets.newHashSet();
-            while (true) {
-                if ((offset % pageSize) == 0) {
-                    pageEnd = Math.min(offset + pageSize, contentLength);
-                    final TextRange pageRange = new TextRange(offset, pageEnd);
-                    final QueryResult<T> page = repository.query(and(query, text(text), rangeOverlap(pageRange)));
-                    try {
-                        for (Layer<T> a : page) {
-                            for (Anchor anchor : a.getAnchors()) {
-                                if (!text.equals(anchor.getText())) {
-                                    continue;
-                                }
-                                final TextRange range = anchor.getRange();
-                                final long start = range.getStart();
-                                final long end = range.getEnd();
-                                if (start >= offset) {
-                                    Set<Layer<T>> starting = starts.get(start);
-                                    if (starting == null) {
-                                        starts.put(start, starting = Sets.newHashSet());
+                final Set<Layer<T>> annotationData = Sets.newHashSet();
+                while (true) {
+                    if ((offset % pageSize) == 0) {
+                        pageEnd = Math.min(offset + pageSize, contentLength);
+                        final TextRange pageRange = new TextRange(offset, pageEnd);
+                        final QueryResult<T> page = repository.query(and(query, text(text), rangeOverlap(pageRange)));
+                        try {
+                            for (Layer<T> a : page) {
+                                for (Anchor anchor : a.getAnchors()) {
+                                    if (!text.equals(anchor.getText())) {
+                                        continue;
                                     }
-                                    starting.add(a);
-                                    annotationData.add(a);
-                                }
-                                if (end <= pageEnd) {
-                                    Set<Layer<T>> ending = ends.get(end);
-                                    if (ending == null) {
-                                        ends.put(end, ending = Sets.newHashSet());
+                                    final TextRange range = anchor.getRange();
+                                    final long start = range.getStart();
+                                    final long end = range.getEnd();
+                                    if (start >= offset) {
+                                        Set<Layer<T>> starting = starts.get(start);
+                                        if (starting == null) {
+                                            starts.put(start, starting = Sets.newHashSet());
+                                        }
+                                        starting.add(a);
+                                        annotationData.add(a);
                                     }
-                                    ending.add(a);
-                                    annotationData.add(a);
+                                    if (end <= pageEnd) {
+                                        Set<Layer<T>> ending = ends.get(end);
+                                        if (ending == null) {
+                                            ends.put(end, ending = Sets.newHashSet());
+                                        }
+                                        ending.add(a);
+                                        annotationData.add(a);
+                                    }
                                 }
                             }
+                        } finally {
+                            AutoCloseables.closeQuietly(page);
                         }
-                    } finally {
-                        AutoCloseables.closeQuietly(page);
+
+                        next = Math.min(starts.isEmpty() ? contentLength : starts.firstKey(), ends.isEmpty() ? contentLength : ends.firstKey());
                     }
 
-                    next = Math.min(starts.isEmpty() ? contentLength : starts.firstKey(), ends.isEmpty() ? contentLength : ends.firstKey());
-                }
+                    if (offset == next) {
+                        final Set<Layer<T>> startEvents = (!starts.isEmpty() && offset == starts.firstKey() ? starts.remove(starts.firstKey()) : Sets.<Layer<T>>newHashSet());
+                        final Set<Layer<T>> endEvents = (!ends.isEmpty() && offset == ends.firstKey() ? ends.remove(ends.firstKey()) : Sets.<Layer<T>>newHashSet());
 
-                if (offset == next) {
-                    final Set<Layer<T>> startEvents = (!starts.isEmpty() && offset == starts.firstKey() ? starts.remove(starts.firstKey()) : Sets.<Layer<T>>newHashSet());
-                    final Set<Layer<T>> endEvents = (!ends.isEmpty() && offset == ends.firstKey() ? ends.remove(ends.firstKey()) : Sets.<Layer<T>>newHashSet());
+                        final Set<Layer<T>> emptyEvents = Sets.newHashSet(Sets.filter(endEvents, emptyIn(text)));
+                        endEvents.removeAll(emptyEvents);
 
-                    final Set<Layer<T>> emptyEvents = Sets.newHashSet(Sets.filter(endEvents, emptyIn(text)));
-                    endEvents.removeAll(emptyEvents);
+                        if (!endEvents.isEmpty()) listener.end(offset, substract(annotationData, endEvents, true));
+                        if (!startEvents.isEmpty())
+                            listener.start(offset, substract(annotationData, startEvents, false));
+                        if (!emptyEvents.isEmpty()) listener.end(offset, substract(annotationData, emptyEvents, true));
 
-                    if (!endEvents.isEmpty()) listener.end(offset, substract(annotationData, endEvents, true));
-                    if (!startEvents.isEmpty()) listener.start(offset, substract(annotationData, startEvents, false));
-                    if (!emptyEvents.isEmpty()) listener.end(offset, substract(annotationData, emptyEvents, true));
+                        next = Math.min(starts.isEmpty() ? contentLength : starts.firstKey(), ends.isEmpty() ? contentLength : ends.firstKey());
+                    }
 
-                    next = Math.min(starts.isEmpty() ? contentLength : starts.firstKey(), ends.isEmpty() ? contentLength : ends.firstKey());
-                }
+                    if (offset == contentLength) {
+                        break;
+                    }
 
-                if (offset == contentLength) {
-                    break;
-                }
-
-                final long readTo = Math.min(pageEnd, next);
-                if (offset < readTo) {
-                    final char[] currentText = new char[(int) (readTo - offset)];
-                    int read = contentStream.read(currentText);
-                    if (read > 0) {
-                        listener.text(new TextRange(offset, offset + read), new String(currentText, 0, read));
-                        offset += read;
+                    final long readTo = Math.min(pageEnd, next);
+                    if (offset < readTo) {
+                        final char[] currentText = new char[(int) (readTo - offset)];
+                        int read = textReader.read(currentText);
+                        if (read > 0) {
+                            listener.text(new TextRange(offset, offset + read), new String(currentText, 0, read));
+                            offset += read;
+                        }
                     }
                 }
+
+                listener.end();
             }
-
-            listener.end();
-        } finally {
-            Closeables.close(contentStream, false);
-        }
+        });
     }
 
 
@@ -147,7 +146,7 @@ public class QueryResultTextStream<T> implements TextStream<T> {
 
     private static <T> Iterable<Layer<T>> substract(Iterable<Layer<T>> from, Set<Layer<T>> selector, boolean remove) {
         final List<Layer<T>> filtered = Lists.newArrayList();
-        for (Iterator<Layer<T>> it = from.iterator(); it.hasNext();  ) {
+        for (Iterator<Layer<T>> it = from.iterator(); it.hasNext(); ) {
             final Layer<T> annotation = it.next();
             if (selector.contains(annotation)) {
                 filtered.add(annotation);
@@ -158,7 +157,6 @@ public class QueryResultTextStream<T> implements TextStream<T> {
         }
         return filtered;
     }
-
 
 
 }

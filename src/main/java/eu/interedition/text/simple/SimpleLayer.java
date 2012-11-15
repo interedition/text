@@ -9,7 +9,6 @@ import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.TextRange;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.util.Arrays;
@@ -73,13 +72,23 @@ public class SimpleLayer<T> implements Layer<T> {
     }
 
     @Override
-    public Reader read() {
-        return new StringReader(text);
+    public void stream(Consumer consumer) throws IOException {
+        consumer.consume(new StringReader(text));
     }
 
     @Override
-    public Reader read(TextRange range) {
-        return new StringReader(range.apply(text));
+    public void stream(TextRange range, Consumer consumer) throws IOException {
+        consumer.consume(new StringReader(range.apply(text)));
+    }
+
+    @Override
+    public String read() {
+        return text;
+    }
+
+    @Override
+    public String read(TextRange range) {
+        return range.apply(text);
     }
 
     @Override

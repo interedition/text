@@ -43,7 +43,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
     public Iterable<Layer<T>> add(Iterable<Layer<T>> batch) throws IOException {
         final List<Layer<T>> added = Lists.newLinkedList();
         for (Layer<T> layer : batch) {
-            added.add(add(layer.getName(), new StringReader(CharStreams.toString(layer.read())), layer.data(), layer.getAnchors()));
+            added.add(add(layer.getName(), new StringReader(layer.read()), layer.data(), layer.getAnchors()));
         }
         return added;
     }

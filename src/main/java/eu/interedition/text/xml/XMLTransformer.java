@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import com.google.common.io.Closeables;
 import com.google.common.io.FileBackedOutputStream;
 import eu.interedition.text.Layer;
+import eu.interedition.text.Text;
 import eu.interedition.text.TextConstants;
 import eu.interedition.text.TextRange;
 import java.io.IOException;
@@ -70,55 +71,59 @@ public class XMLTransformer<T> {
         this.modules = configuration.getModules();
     }
 
-    public Layer<T> transform(Layer<T> source) throws IOException, XMLStreamException {
+    public Layer<T> transform(final Layer<T> source) throws IOException, XMLStreamException {
         this.source = source;
         this.target = configuration.start(source);
 
         try {
-            Reader xmlReader = null;
-            XMLStreamReader reader = null;
-            try {
-                xmlReader = source.read();
-                reader = xmlInputFactory.createXMLStreamReader(xmlReader);
+            source.stream(new Text.Consumer() {
+                @Override
+                public void consume(Reader sourceReader) throws IOException {
+                    XMLStreamReader xmlStream = null;
+                    try {
+                        xmlStream = xmlInputFactory.createXMLStreamReader(sourceReader);
 
-                final Stack<XMLEntity> entities = new Stack<XMLEntity>();
-                start();
-                while (reader.hasNext()) {
-                    final int event = reader.next();
-                    mapOffsetDelta(0, reader.getLocation().getCharacterOffset() - sourceOffset);
+                        final Stack<XMLEntity> entities = new Stack<XMLEntity>();
+                        start();
+                        while (xmlStream.hasNext()) {
+                            final int event = xmlStream.next();
+                            mapOffsetDelta(0, xmlStream.getLocation().getCharacterOffset() - sourceOffset);
 
-                    switch (event) {
-                        case XMLStreamConstants.START_ELEMENT:
-                            endText();
-                            nextSibling();
-                            start(entities.push(XMLEntity.newElement(reader)));
-                            break;
-                        case XMLStreamConstants.END_ELEMENT:
-                            endText();
-                            end(entities.pop());
-                            break;
-                        case XMLStreamConstants.COMMENT:
-                            endText();
-                            nextSibling();
-                            emptyEntity(XMLEntity.newComment(reader));
-                            break;
-                        case XMLStreamConstants.PROCESSING_INSTRUCTION:
-                            endText();
-                            nextSibling();
-                            emptyEntity(XMLEntity.newPI(reader));
-                            break;
-                        case XMLStreamConstants.CHARACTERS:
-                        case XMLStreamConstants.ENTITY_REFERENCE:
-                        case XMLStreamConstants.CDATA:
-                            newText(reader.getText());
-                            break;
+                            switch (event) {
+                                case XMLStreamConstants.START_ELEMENT:
+                                    endText();
+                                    nextSibling();
+                                    start(entities.push(XMLEntity.newElement(xmlStream)));
+                                    break;
+                                case XMLStreamConstants.END_ELEMENT:
+                                    endText();
+                                    end(entities.pop());
+                                    break;
+                                case XMLStreamConstants.COMMENT:
+                                    endText();
+                                    nextSibling();
+                                    emptyEntity(XMLEntity.newComment(xmlStream));
+                                    break;
+                                case XMLStreamConstants.PROCESSING_INSTRUCTION:
+                                    endText();
+                                    nextSibling();
+                                    emptyEntity(XMLEntity.newPI(xmlStream));
+                                    break;
+                                case XMLStreamConstants.CHARACTERS:
+                                case XMLStreamConstants.ENTITY_REFERENCE:
+                                case XMLStreamConstants.CDATA:
+                                    newText(xmlStream.getText());
+                                    break;
+                            }
+                        }
+                        end();
+                    } catch (XMLStreamException e) {
+                        throw Throwables.propagate(e);
+                    } finally {
+                        XML.closeQuietly(xmlStream);
                     }
                 }
-                end();
-            } finally {
-                XML.closeQuietly(reader);
-                Closeables.close(xmlReader, false);
-            }
+            });
             Reader textReader = null;
             try {
                 configuration.end(target, textReader = read());

@@ -18,6 +18,7 @@ import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResultTextStream;
+import eu.interedition.text.Text;
 import eu.interedition.text.TextConstants;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRanges;
@@ -71,15 +72,20 @@ public class ChangeTesting extends AbstractTestResourceTest {
         })) {
             final List<ChangeSet> changeSets = Lists.newArrayList();
 
-            Reader xmlStream = null;
-            XMLStreamReader xml = null;
-            try {
-                xmlStream = source(testFile.toURI()).read();
-                changeSets.addAll(ChangeSet.readDeclarations(xml = xmlInputFactory.createXMLStreamReader(xmlStream)));
-            } finally {
-                XML.closeQuietly(xml);
-                Closeables.close(xmlStream, false);
-            }
+            source(testFile.toURI()).stream(new Text.Consumer() {
+                @Override
+                public void consume(Reader xmlStream) throws IOException {
+                    XMLStreamReader xml = null;
+                    try {
+                        changeSets.addAll(ChangeSet.readDeclarations(xml = xmlInputFactory.createXMLStreamReader(xmlStream)));
+                    } catch (XMLStreamException e) {
+                        throw new IOException(e);
+                    } finally {
+                        XML.closeQuietly(xml);
+                        Closeables.close(xmlStream, false);
+                    }
+                }
+            });
 
             changeSets.add(0, new ChangeSet(""));
 
