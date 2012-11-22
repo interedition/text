@@ -445,6 +445,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
                         JdbcUtil.closeQuietly(resultSet);
                         JdbcUtil.closeQuietly(insertName);
                         JdbcUtil.closeQuietly(findName);
+                        JdbcUtil.closeQuietly(connection);
                     }
                 }
             });
