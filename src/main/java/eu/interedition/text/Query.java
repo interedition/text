@@ -45,8 +45,12 @@ public abstract class Query {
         return new None();
     }
 
-    public static <T> Query is(Layer<T> annotation) {
-        return new LayerQuery<T>(annotation);
+    public static <T> Query is(Layer<T> layer) {
+        return new LayerIdentityQuery<T>(layer.getId());
+    }
+
+    public static <T> Query is(long id) {
+        return new LayerIdentityQuery<T>(id);
     }
 
     public static Query name(Name name) {
@@ -65,7 +69,7 @@ public abstract class Query {
         return new RangeQuery.RangeEnclosesQuery(range);
     }
 
-    public static Query rangeLength(int length) {
+    public static Query rangeLength(long length) {
         return new RangeQuery.RangeLengthQuery(length);
     }
 
@@ -150,15 +154,15 @@ public abstract class Query {
         }
     }
 
-    public static class LayerQuery<T> extends Query {
-        private final Layer<T> layer;
+    public static class LayerIdentityQuery<T> extends Query {
+        private final long id;
 
-        LayerQuery(Layer<T> layer) {
-            this.layer = layer;
+        LayerIdentityQuery(long id) {
+            this.id = id;
         }
 
-        public Layer<T> getLayer() {
-            return layer;
+        public long getId() {
+            return id;
         }
     }
 

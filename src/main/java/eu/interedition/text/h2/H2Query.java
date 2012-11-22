@@ -183,8 +183,8 @@ public class H2Query<T> {
             return new RangeOverlapClause(((Query.RangeQuery.RangeOverlapQuery) input).getRange());
         } else if (input instanceof Query.NameQuery) {
             return new NameClause(((Query.NameQuery) input).getName());
-        } else if (input instanceof Query.LayerQuery) {
-            return new LayerClause(((Query.LayerQuery<?>) input).getLayer());
+        } else if (input instanceof Query.LayerIdentityQuery) {
+            return new LayerClause(((Query.LayerIdentityQuery<?>) input).getId());
         } else if (input instanceof Query.TextQuery) {
             return new TextClause(((Query.TextQuery) input).getText());
         }
@@ -301,15 +301,15 @@ public class H2Query<T> {
     }
 
     class LayerClause extends Clause {
-        final Layer<?> layer;
+        private final long id;
 
-        LayerClause(Layer<?> layer) {
-            this.layer = layer;
+        LayerClause(long id) {
+            this.id = id;
         }
 
         @Override
         public String toString() {
-            return (layer instanceof LayerRelation ? ("l.id = " + ((LayerRelation<?>) layer).getId()) : NONE.toString());
+            return ("l.id = " + id);
         }
     }
 

@@ -49,7 +49,6 @@ public class LayerResource {
 		this.textRepository = textRepository;
 		this.objectMapper = objectMapper;
 	}
-
 	
 	//test: curl -i -X GET http://localhost:8080/2049
 	@GET
@@ -103,6 +102,4 @@ public class LayerResource {
 		}
 		return result;
 	}
-	
-
 }

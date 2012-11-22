@@ -1,29 +1,33 @@
 package eu.interedition.text.lisp;
 
-import com.google.common.base.Strings;
-import eu.interedition.text.AbstractTest;
+import eu.interedition.text.AbstractTextTest;
+import eu.interedition.text.QueryResultTextStream;
+import eu.interedition.text.TextConstants;
+import eu.interedition.text.TextRange;
+import eu.interedition.text.TextStream;
+import eu.interedition.text.simple.KeyValues;
 import java.io.IOException;
 import org.junit.Test;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class LispParserTest extends AbstractTest {
+public class LispParserTest extends AbstractTextTest {
 
     @Test
     public void parse() throws LispParserException, IOException {
-        final Expression expr = new LispParser("(or (text 2) (and (name \"w\" \"http://www.tei-c.org/\\\"ns/1.0\") (text 1) (overlaps 1 2) (matches \"\u01ff\")))").expression();
-        print(expr, 0);
-        System.out.println(expr.toString());
-    }
-
-    private void print(Expression expr, int depth) {
-        System.out.println(Strings.repeat("\t", depth) + expr.getClass());
-        if (expr instanceof ExpressionList) {
-            for (Expression contained : ((ExpressionList) expr)) {
-                print(contained, depth + 1);
+        final QueryParser<KeyValues> qp = new QueryParser<KeyValues>(repository);
+        new QueryResultTextStream<KeyValues>(repository,
+                testText(),
+                qp.parse("(and (name \"w\" \"" + TextConstants.TEI_NS.toString() + "\") (overlaps 0 100))")
+        ).stream(new TextStream.ListenerAdapter<KeyValues>() {
+            @Override
+            public void text(TextRange r, String text) {
+                System.out.println(text);
             }
 
-        }
+
+        });
+
     }
 }
