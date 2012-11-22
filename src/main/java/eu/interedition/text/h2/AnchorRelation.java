@@ -1,9 +1,9 @@
 package eu.interedition.text.h2;
 
+import com.google.common.base.Objects;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
-import java.util.Objects;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
@@ -23,7 +23,7 @@ public class AnchorRelation extends Anchor {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hashCode(id);
     }
 
     @Override

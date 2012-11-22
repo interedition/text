@@ -11,7 +11,6 @@ import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
@@ -19,8 +18,6 @@ import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 /**
@@ -67,11 +64,6 @@ class SingleConnectionDataSource implements DataSource {
     @Override
     public int getLoginTimeout() throws SQLException {
         return ds.getLoginTimeout();
-    }
-
-    @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return ds.getParentLogger();
     }
 
     @SuppressWarnings("unchecked")
@@ -194,7 +186,7 @@ class SingleConnectionDataSource implements DataSource {
 
         @Override
         public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-            return connection.prepareCall(sql, resultSetType,  resultSetConcurrency);
+            return connection.prepareCall(sql, resultSetType, resultSetConcurrency);
         }
 
         @Override
@@ -320,31 +312,6 @@ class SingleConnectionDataSource implements DataSource {
         @Override
         public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
             return connection.createStruct(typeName, attributes);
-        }
-
-        @Override
-        public void setSchema(String schema) throws SQLException {
-            connection.setSchema(schema);
-        }
-
-        @Override
-        public String getSchema() throws SQLException {
-            return connection.getSchema();
-        }
-
-        @Override
-        public void abort(Executor executor) throws SQLException {
-            connection.abort(executor);
-        }
-
-        @Override
-        public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-            connection.setNetworkTimeout(executor, milliseconds);
-        }
-
-        @Override
-        public int getNetworkTimeout() throws SQLException {
-            return connection.getNetworkTimeout();
         }
 
         @Override
