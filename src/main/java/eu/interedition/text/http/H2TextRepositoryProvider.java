@@ -35,7 +35,7 @@ public class H2TextRepositoryProvider implements Provider<H2TextRepository<JsonN
                     (System.getProperty("interedition.debug") == null ? "" : ";TRACE_LEVEL_SYSTEM_OUT=2"));
 
             final JdbcConnectionPool dataSource = JdbcConnectionPool.create(dbUri.toString(), "sa", "");
-            return new H2TextRepository<JsonNode>(JsonNode.class, dataSource);
+            return new H2TextRepository<JsonNode>(JsonNode.class, dataSource).withSchema();
         } catch (URISyntaxException e) {
             throw Throwables.propagate(e);
         }

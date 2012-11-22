@@ -69,7 +69,7 @@ public abstract class Query {
         return new RangeQuery.RangeEnclosesQuery(range);
     }
 
-    public static Query rangeLength(int length) {
+    public static Query rangeLength(long length) {
         return new RangeQuery.RangeLengthQuery(length);
     }
 
