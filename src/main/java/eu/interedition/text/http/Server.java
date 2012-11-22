@@ -79,7 +79,8 @@ public class Server extends DefaultResourceConfig {
         return Sets.<Object>newHashSet(
         		injector.getInstance(LayerResource.class),
         		injector.getInstance(StaticResource.class),
-        		injector.getInstance(ObjectMapperMessageBodyReaderWriter.class)
+        		injector.getInstance(ObjectMapperMessageBodyReaderWriter.class),
+        		injector.getInstance(RepositoryResource.class)
         		);
     }
 }
