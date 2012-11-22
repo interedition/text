@@ -27,6 +27,8 @@ import java.util.Set;
  */
 public interface Layer<T> extends Named, Text {
 
+    long getId();
+
     Set<Anchor> getAnchors();
 
     T data();

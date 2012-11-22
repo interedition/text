@@ -230,6 +230,11 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
             }
 
             @Override
+            public long getId() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
             public T data() {
                 return data;
             }

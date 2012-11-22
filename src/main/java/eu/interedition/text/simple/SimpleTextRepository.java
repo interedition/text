@@ -103,7 +103,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
     private final Function<Query, Predicate<Layer<T>>> TO_PREDICATE = new Function<Query, Predicate<Layer<T>>>() {
         @SuppressWarnings("unchecked")
         @Override
-        public Predicate<Layer<T>> apply(@Nullable Query input) {
+        public Predicate<Layer<T>> apply(@Nullable final Query input) {
             if (input instanceof Query.Any) {
                 return Predicates.alwaysTrue();
             } else if (input instanceof Query.None) {
@@ -120,8 +120,8 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
                 return new AnyAnchorPredicate<T>(new RangeOverlapPredicate(((Query.RangeQuery.RangeOverlapQuery) input).getRange()));
             } else if (input instanceof Query.NameQuery) {
                 return new NamePredicate<T>(((Query.NameQuery) input).getName());
-            } else if (input instanceof Query.LayerQuery) {
-                return Predicates.equalTo(((Query.LayerQuery<T>) input).getLayer());
+            } else if (input instanceof Query.LayerIdentityQuery) {
+                return new LayerIdentityPredicate<T>(((Query.LayerIdentityQuery<T>) input).getId());
             } else if (input instanceof Query.TextQuery) {
                 return new AnyAnchorPredicate<T>(new TextPredicate(((Query.TextQuery) input).getText()));
             }
@@ -131,6 +131,20 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
 
     public void updateText(Layer<T> target, Reader text) throws IOException {
         ((SimpleLayer<T>) target).text = CharStreams.toString(text);
+    }
+
+    public static class LayerIdentityPredicate<T> implements Predicate<Layer<T>> {
+
+        private final long id;
+
+        public LayerIdentityPredicate(long id) {
+            this.id = id;
+        }
+
+        @Override
+        public boolean apply(@Nullable Layer<T> input) {
+            return (id == input.getId());
+        }
     }
 
     public static class AnyAnchorPredicate<T> implements Predicate<Layer<T>> {
@@ -160,6 +174,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
             return input.getName().equals(name);
         }
     }
+
 
     public static class TextPredicate implements Predicate<Anchor> {
 
