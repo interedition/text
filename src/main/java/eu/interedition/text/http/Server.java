@@ -77,7 +77,7 @@ public class Server extends DefaultResourceConfig {
     public Set<Object> getSingletons() {
 
         return Sets.<Object>newHashSet(
-        		injector.getInstance(LayerResource.class),
+        		injector.getInstance(HelpResource.class),
         		injector.getInstance(StaticResource.class),
         		injector.getInstance(ObjectMapperMessageBodyReaderWriter.class),
         		injector.getInstance(RepositoryResource.class)

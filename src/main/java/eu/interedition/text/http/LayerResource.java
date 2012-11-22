@@ -13,7 +13,7 @@ import eu.interedition.text.h2.H2TextRepository;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor
  *         Middell</a>
  */
-@Path("/")
+@Path("/layer")
 public class LayerResource {
 
 	private final H2TextRepository<JsonNode> textRepository;
