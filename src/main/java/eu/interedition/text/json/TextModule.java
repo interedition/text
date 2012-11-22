@@ -6,7 +6,7 @@ import org.codehaus.jackson.map.module.SimpleModule;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-class TextModule extends SimpleModule {
+public class TextModule extends SimpleModule {
 
     public TextModule() {
         super(TextModule.class.getPackage().getName(), Version.unknownVersion());

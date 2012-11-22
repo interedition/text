@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ws.rs.core.UriBuilder;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.glassfish.grizzly.http.server.HttpServer;
 
 /**
@@ -37,6 +38,7 @@ public class Server extends DefaultResourceConfig {
             @Override
             protected void configure() {
                 bind(new TypeLiteral<H2TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
+                bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class).asEagerSingleton();
             }
         });
 
@@ -73,6 +75,9 @@ public class Server extends DefaultResourceConfig {
 
     @Override
     public Set<Object> getSingletons() {
-        return Sets.<Object>newHashSet(injector.getInstance(LayerResource.class));
+        return Sets.newHashSet(
+                injector.getInstance(LayerResource.class),
+                injector.getInstance(ObjectMapperMessageBodyReaderWriter.class)
+        );
     }
 }
