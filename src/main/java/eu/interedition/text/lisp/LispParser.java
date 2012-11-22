@@ -48,44 +48,38 @@ public class LispParser {
     public LispParser(Reader reader) {
         tokenizer = new StreamTokenizer(new BufferedReader(reader));
         tokenizer.resetSyntax();
+        tokenizer.parseNumbers();
         tokenizer.whitespaceChars(0, ' ');
         tokenizer.wordChars(' ' + 1, 255);
         tokenizer.ordinaryChar('(');
         tokenizer.ordinaryChar(')');
-        tokenizer.ordinaryChar('\'');
         tokenizer.commentChar(';');
         tokenizer.quoteChar('"');
     }
 
     public Expression expression() throws LispParserException, IOException {
-        final Token token = token();
-        switch (token.type) {
+        tokenizer.nextToken();
+        switch (tokenizer.ttype) {
             case '(':
                 final ExpressionList list = new ExpressionList();
-                while (peek().type != ')') {
+                while (true) {
+                    tokenizer.nextToken();
+                    if (tokenizer.ttype == ')') {
+                        break;
+                    }
+                    if (tokenizer.ttype == StreamTokenizer.TT_EOF) {
+                        throw new LispParserException();
+                    }
+                    tokenizer.pushBack();
                     list.add(expression());
                 }
-                token(); // consume ')'
                 return list;
+            case StreamTokenizer.TT_NUMBER:
+                return new NumberAtom(Math.round(tokenizer.nval));
             case '"':
-                return new StringAtom(token.text);
+                return new StringAtom(tokenizer.sval);
             default:
-                return new Atom(token.text);
+                return new Atom(tokenizer.sval);
         }
-    }
-
-    public Token peek() throws IOException {
-        tokenizer.nextToken();
-        if (tokenizer.ttype == StreamTokenizer.TT_EOF) {
-            return null;
-        }
-        final Token token = new Token(tokenizer);
-        tokenizer.pushBack();
-        return token;
-    }
-
-    public Token token() throws IOException {
-        tokenizer.nextToken();
-        return new Token(tokenizer);
     }
 }
