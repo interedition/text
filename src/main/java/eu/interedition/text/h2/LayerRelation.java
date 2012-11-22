@@ -11,7 +11,6 @@ import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.TextRange;
-import eu.interedition.text.util.AutoCloseables;
 import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -145,9 +144,9 @@ public class LayerRelation<T> implements Layer<T> {
         } catch (IOException e) {
             throw Throwables.propagate(e);
         } finally {
-            AutoCloseables.closeQuietly(resultSet);
-            AutoCloseables.closeQuietly(query);
-            AutoCloseables.closeQuietly(connection);
+            JdbcUtil.closeQuietly(resultSet);
+            JdbcUtil.closeQuietly(query);
+            JdbcUtil.closeQuietly(connection);
         }
     }
 
@@ -218,9 +217,9 @@ public class LayerRelation<T> implements Layer<T> {
         } catch (IOException e) {
             throw repository.rollbackAndConvert(connection, e);
         } finally {
-            AutoCloseables.closeQuietly(resultSet);
-            AutoCloseables.closeQuietly(query);
-            AutoCloseables.closeQuietly(connection);
+            JdbcUtil.closeQuietly(resultSet);
+            JdbcUtil.closeQuietly(query);
+            JdbcUtil.closeQuietly(connection);
         }
     }
 

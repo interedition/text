@@ -20,13 +20,13 @@
 package eu.interedition.text.rdbms;
 
 import com.google.common.collect.Iterables;
+import com.google.common.io.Closeables;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import org.junit.Test;
 
@@ -48,13 +48,13 @@ public class AnnotationTest extends AbstractTestResourceTest {
             try {
                 repository.delete(layers);
             } finally {
-                AutoCloseables.closeQuietly(layers);
+                Closeables.closeQuietly(layers);
             }
             final QueryResult<KeyValues> remaining = repository.query(Query.text(existing));
             try {
                 assertTrue(Integer.toString(size(remaining)) + " in " + existing, Iterables.isEmpty(remaining));
             } finally {
-                AutoCloseables.closeQuietly(remaining);
+                Closeables.closeQuietly(remaining);
             }
         } finally {
             unload();

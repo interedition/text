@@ -96,7 +96,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         }
 
         @Override
-        public void close() throws Exception {
+        public void close() {
         }
     }
 

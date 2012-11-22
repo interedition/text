@@ -22,6 +22,7 @@ package eu.interedition.text.token;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
@@ -33,7 +34,6 @@ import eu.interedition.text.TextConstants;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRanges;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
@@ -134,7 +134,7 @@ public class TokenizerTest extends AbstractTestResourceTest {
                 }
             }
         } finally {
-            AutoCloseables.closeQuietly(query);
+            Closeables.closeQuietly(query);
         }
 
         final long length = layer.length();

@@ -20,11 +20,11 @@
 package eu.interedition.text.query;
 
 import com.google.common.base.Joiner;
+import com.google.common.io.Closeables;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.util.AutoCloseables;
 import org.junit.Test;
 
 import static eu.interedition.text.Query.and;
@@ -41,7 +41,7 @@ public class RangeQueryTest extends AbstractTestResourceTest {
       try {
           LOG.fine(Joiner.on('\n').join(qr));
       } finally {
-          AutoCloseables.closeQuietly(qr);
+          Closeables.closeQuietly(qr);
       }
   }
 }

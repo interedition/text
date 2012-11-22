@@ -1,5 +1,6 @@
 package eu.interedition.text.json;
 
+import com.google.common.io.Closeables;
 import com.google.common.io.NullOutputStream;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
@@ -9,7 +10,6 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.QueryResultTextStream;
 import eu.interedition.text.TextConstants;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.logging.Level;
@@ -44,7 +44,7 @@ public class SerializationTest extends AbstractTestResourceTest {
         try {
             jg.writeObject(qr);
         } finally {
-            AutoCloseables.closeQuietly(qr);
+            Closeables.closeQuietly(qr);
         }
 
         jg.writeObject(new QueryResultTextStream<KeyValues>(repository, testText, Query.name(new Name(TextConstants.TEI_NS, "seg"))));

@@ -20,6 +20,7 @@
 package eu.interedition.text.xml;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.Closeables;
 import com.google.common.io.NullOutputStream;
 import eu.interedition.text.AbstractTestResourceTest;
 import eu.interedition.text.Layer;
@@ -28,7 +29,6 @@ import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextConstants;
 import eu.interedition.text.simple.KeyValues;
-import eu.interedition.text.util.AutoCloseables;
 import java.io.PrintStream;
 import java.net.URI;
 import java.util.List;
@@ -64,7 +64,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
         try {
             repository.delete(emptyRanges);
         } finally {
-            AutoCloseables.closeQuietly(emptyRanges);
+            Closeables.closeQuietly(emptyRanges);
         }
 
         XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {
@@ -95,7 +95,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
         try {
             repository.delete(emptyRanges);
         } finally {
-            AutoCloseables.closeQuietly(emptyRanges);
+            Closeables.closeQuietly(emptyRanges);
         }
 
         XMLSerializer.serialize(createOutputHandler(), repository, testLayer, new XMLSerializerConfigurationBase() {

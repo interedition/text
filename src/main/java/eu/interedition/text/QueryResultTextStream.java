@@ -4,8 +4,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import eu.interedition.text.simple.SimpleTextRepository;
-import eu.interedition.text.util.AutoCloseables;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
@@ -93,7 +93,7 @@ public class QueryResultTextStream<T> implements TextStream<T> {
                                 }
                             }
                         } finally {
-                            AutoCloseables.closeQuietly(page);
+                            Closeables.closeQuietly(page);
                         }
 
                         next = Math.min(starts.isEmpty() ? contentLength : starts.firstKey(), ends.isEmpty() ? contentLength : ends.firstKey());
