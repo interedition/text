@@ -20,13 +20,13 @@
 package eu.interedition.text;
 
 import eu.interedition.text.h2.H2TextRepository;
-import eu.interedition.text.h2.JdbcUtil;
 import eu.interedition.text.simple.KeyValues;
 import eu.interedition.text.simple.SimpleTextRepository;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.Collections;
+import javax.sql.DataSource;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -43,7 +43,7 @@ public abstract class AbstractTextTest extends AbstractTest {
     protected static final String TEST_TEXT = "Hello World";
 
     private static H2TextRepository<KeyValues> h2Repository;
-    private static SingleConnectionDataSource h2DataSource;
+    private static DataSource h2DataSource;
 
     protected TextRepository<KeyValues> repository;
 
@@ -58,7 +58,7 @@ public abstract class AbstractTextTest extends AbstractTest {
             if (System.getProperty("interedition.debug") != null) {
                 url.append(";TRACE_LEVEL_SYSTEM_OUT=2");
             }
-            h2DataSource = new SingleConnectionDataSource(JdbcConnectionPool.create(url.toString(), "sa", "sa"));
+            h2DataSource = JdbcConnectionPool.create(url.toString(), "sa", "");
             h2Repository = new H2TextRepository<KeyValues>(KeyValues.class, h2DataSource, false).withSchema();
         }
         return h2Repository;
@@ -67,16 +67,11 @@ public abstract class AbstractTextTest extends AbstractTest {
     @AfterClass
     public static void closeDataSource() {
         h2Repository = null;
-        if (h2DataSource != null && h2DataSource.connection != null) {
-            JdbcUtil.closeQuietly(h2DataSource.connection);
-        }
+        h2DataSource = null;
     }
 
     @After
     public void rollback() throws SQLException {
-        if (h2DataSource != null && h2DataSource.connection != null) {
-            h2DataSource.connection.rollback();
-        }
         if (h2Repository != null) {
             h2Repository.clearNameCache();
         }
