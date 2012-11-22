@@ -73,6 +73,9 @@ public class Server extends DefaultResourceConfig {
 
     @Override
     public Set<Object> getSingletons() {
-        return Sets.<Object>newHashSet(injector.getInstance(LayerResource.class));
+        return Sets.<Object>newHashSet(
+        		injector.getInstance(LayerResource.class),
+        		injector.getInstance(StaticResource.class)
+        		);
     }
 }
