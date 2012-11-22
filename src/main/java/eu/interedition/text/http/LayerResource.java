@@ -8,7 +8,7 @@ import org.codehaus.jackson.JsonNode;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-@Path("/")
+@Path("/layer")
 public class LayerResource {
 
     private final H2TextRepository<JsonNode> textRepository;
