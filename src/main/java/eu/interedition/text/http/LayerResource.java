@@ -17,6 +17,4 @@ public class LayerResource {
     public LayerResource(H2TextRepository<JsonNode> textRepository) {
         this.textRepository = textRepository;
     }
-
-
 }
