@@ -76,43 +76,67 @@ public class RepositoryResource {
                 .build();
 
     }
+    
+  //test: curl -H "Accept: application/json" -i -X GET http://localhost:8080/2049?q=asdas
+    @GET
+	@Path("{layerId}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Object queryLayer(@PathParam("layerId") Long layerId, @QueryParam("q") String q) throws LispParserException, IOException {
+    	QueryResult<JsonNode> rs = query(q);
+		return rs;
+    }
+    
 	
-	//test: curl -i -X GET http://localhost:8080/2049
+	//test: curl -H "Accept: application/json" -i -X GET http://localhost:8080/2049
 	@GET
 	@Path("{layerId}")
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Object getLayer(@PathParam("layerId") Long layerId, @PathParam("q") String q) throws LispParserException, IOException {
+	public LayerRelation<JsonNode> getLayer(@PathParam("layerId") Long layerId) throws LispParserException, IOException {
+		LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
+		return layer;
+	}
+	
+	//curl -H "Accept: text/plain" http://localhost:8080/2049
+	@GET
+	@Path("{layerId}")
+	@Produces({ MediaType.TEXT_PLAIN })
+	public String getLayerText(@PathParam("layerId") Long layerId) throws LispParserException, IOException {
 		System.out.println(layerId);
 		
-		LayerRelation<JsonNode> layer = null;
-		if(q != null && q.length() > 0){
-			QueryResult<JsonNode> rs = query(q);
-			return rs;
-		}else{
-			layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
-			return layerToObjectNode(layer);
+		LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
+		if(layer != null){
+			return layer.read();
 		}
+		return null;
 	}
 
-	//test: curl -i -X POST -d '{"name":"base", "text":"mi textooo"}' http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
+	//test: curl -i -X POST -d '{"name":["http://interedition.eu/ns","base"], "text":"my text"}'
+	//http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	public JsonNode postLayer(JsonNode layerJSON) {
+	public Object postLayer(JsonNode layerJSON) {
 		
 		System.out.println(layerJSON.toString());
 		
 		LayerRelation<JsonNode> layer = null;
 		try {
-			layer = (LayerRelation<JsonNode>) this.textRepository.add(
-					new Name(
-							TextConstants.INTEREDITION_NS_URI, layerJSON.get("name").toString()),
-					new StringReader(layerJSON.get("text").toString()), null);
+			if(layerJSON.get("anchors") == null){
+				layer = (LayerRelation<JsonNode>) this.textRepository.add(
+						new Name(
+								layerJSON.get("name").get(0).toString(), layerJSON.get("name").get(1).toString()),
+						new StringReader(layerJSON.get("text").toString()), null);	
+			}else{
+				//TODO set the anchors (annotation)
+			}
+			
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return layerToObjectNode(layer);
+		ObjectNode result = objectMapper.createObjectNode();
+		result.put("id", layer.getId());
+		return result;
 	}
 
 	

@@ -11,27 +11,121 @@
   <body>
 	<h1>Text Repository API</h1>
 	<h2>/</h2>
-	Examples:
-	Creating of a base layer:
-	curl -i -X POST -d '{"name":"layerName", "text":"abcd..."}' http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
-	curl -i -X POST -d '{"name":"layerName", "text":"abcd...", target:[{}, {},...] }' http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
-	
-	<h2>/LayerIdentifier</h2>
-	Example: http://localhost:8080/2049
 	<h3>POST</h3>
-	Creates a text. Example content:
+	<p>Examples:</p>
+	<p>Create of a base layer:</p>
+	<pre>curl -i -X POST  -d '{"name":"layerName", "text":"abcd..."}' http://localhost:8080/ 
+	-H "Content-Type: application/json"  -H "Accept: application/json"</pre>
+	<p>Returns the id</p>
+	<p>Example: <pre>{"id": 15}</pre></p>
+	
+	<p> Create an annotation</p>
 	<pre>
-	  {text: "This is a text."}
-	</pre>
-	<br>
-	Example Answer:
-	<pre>
-	  {uri:"/15"}
-	</pre>
-        <h3>Add Ranges</h3>
-        <div>TODO write content</div>
-        <h3>Query</h3>
-        <div>TODO write content</div>
+	curl -i -X POST http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json" -d
+{
+    "name": "layerName",
+    "text": "comments...",
+    "targets": [
+        {
+            "id": 10,
+            "ranges": [
+                [
+                    10,
+                    20
+                ],
+                [
+                    30,
+                    40
+                ]
+            ]
+        },
+        {
+            "id": 11,
+            "ranges": [
+                [
+                    10,
+                    20
+                ],
+                [
+                    30,
+                    40
+                ],
+                [
+                    50,
+                    60
+                ]
+            ]
+        }
+    ]
+}</pre>
+    <p>Returns the id</p>
+    <p>Example: <pre>{"id": 15}</pre></p>
+    <h2>/?q={query}</h2>
+
+    <h3>GET</h3>
+    
+        <p>Query the repository</p>
+    
+        <p>Examples:</p>
+    <pre>curl 'http://localhost:8080/?q=(range 20 30)' -H "Accept: application/json"</pre>
+    <p>Returns an array of ids</p>
+    <p>Example: <pre>[{"id": 15},{"id": 20}]</pre></p>
+    
+    <h2>/{id}</h2>
+    
+	<h3>GET</h3>
+	<p>Get a layer</p>
+	<p>Example:</p> 
+	<pre>http://localhost:8080/2049</pre>
+	<p>Returns a layer</p>
+	<p>Examples: <pre>
+{
+    "id": 2049,
+    "name": "layerName",
+    "text": "comments...",
+    "targets": [
+        {
+            "id": 10,
+            "ranges": [
+                [
+                    10,
+                    20
+                ],
+                [
+                    30,
+                    40
+                ]
+            ]
+        },
+        {
+            "id": 11,
+            "ranges": [
+                [
+                    10,
+                    20
+                ],
+                [
+                    30,
+                    40
+                ],
+                [
+                    50,
+                    60
+                ]
+            ]
+        }
+    ]
+}	
+	</pre></p>
+	
+	<h2>/{id}?q={query}</h2>
+	<h3>GET</h3>
+    <p>Query a layer</p>
+    <p>Example:</p> 
+    <pre>curl 'http://localhost:8080/2020?q=(range 20 30)' -H "Accept: application/json"</pre>
+    <p>Returns an array of ids</p>
+    <p>Example: <pre>[{"id": 15}]</pre></p>
+	
   </body>
 
 </html>
