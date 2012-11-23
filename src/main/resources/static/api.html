@@ -11,6 +11,13 @@
   <body>
 	<h1>Text Repository API</h1>
 	<h2>/</h2>
+	Examples:
+	Creating of a base layer:
+	curl -i -X POST -d '{"name":"layerName", "text":"abcd..."}' http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
+	curl -i -X POST -d '{"name":"layerName", "text":"abcd...", target:[{}, {},...] }' http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
+	
+	<h2>/LayerIdentifier</h2>
+	Example: http://localhost:8080/2049
 	<h3>POST</h3>
 	Creates a text. Example content:
 	<pre>

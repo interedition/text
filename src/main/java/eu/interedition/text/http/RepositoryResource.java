@@ -1,6 +1,7 @@
 package eu.interedition.text.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 
 import javax.ws.rs.Consumes;
@@ -10,15 +11,19 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
+import com.google.common.io.Closeables;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
@@ -35,17 +40,17 @@ public class RepositoryResource {
 
 	private TextRepository<JsonNode> textRepository;
 	private final ObjectMapper objectMapper;
+	private String documentationPath;
 	
 	@Inject
-	public RepositoryResource(H2TextRepository<JsonNode> textRepository, ObjectMapper objectMapper) {
+	public RepositoryResource(H2TextRepository<JsonNode> textRepository, ObjectMapper objectMapper, @Named("interedition.documentation_path") String documentationPath) {
 		this.textRepository = textRepository;
 		this.objectMapper = objectMapper;
+		this.documentationPath = documentationPath;
 	}
 	
 
-	@Path("")
-	@GET
-	public QueryResult<JsonNode> query(@Context Request request, @QueryParam("q") String q) throws LispParserException, IOException {
+	public QueryResult<JsonNode> query(String q) throws LispParserException, IOException {
 		final QueryParser<JsonNode> parser = new QueryParser<JsonNode>(textRepository);
 		final Query query = parser.parse(q);
 		
@@ -53,26 +58,40 @@ public class RepositoryResource {
 		
 	}
 	
-	
-	
-	
-	
+    @GET
+    @Path("/")
+    public Response stream(@Context Request request) throws IOException {
+        InputStream stream = getClass().getResourceAsStream(this.documentationPath);
+        
+
+        if (request.getMethod().equals("GET")) {
+            final Response.ResponseBuilder preconditions = request.evaluatePreconditions();
+            if (preconditions != null) {
+                Closeables.close(stream, false);
+                throw new WebApplicationException(preconditions.build());
+            }
+        }
+        return Response.ok()
+                .entity(stream)
+                .build();
+
+    }
 	
 	//test: curl -i -X GET http://localhost:8080/2049
 	@GET
 	@Path("{layerId}")
 	@Produces({ MediaType.APPLICATION_JSON })
-	public JsonNode getLayer(@PathParam("layerId") Long layerId, @PathParam("q") String q) {
+	public Object getLayer(@PathParam("layerId") Long layerId, @PathParam("q") String q) throws LispParserException, IOException {
 		System.out.println(layerId);
 		
 		LayerRelation<JsonNode> layer = null;
 		if(q != null && q.length() > 0){
-			//search
+			QueryResult<JsonNode> rs = query(q);
+			return rs;
 		}else{
 			layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
+			return layerToObjectNode(layer);
 		}
-		
-		return layerToObjectNode(layer);
 	}
 
 	//test: curl -i -X POST -d '{"name":"base", "text":"mi textooo"}' http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
