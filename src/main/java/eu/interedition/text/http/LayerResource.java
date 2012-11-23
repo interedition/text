@@ -63,7 +63,7 @@ public class LayerResource {
 	@GET
 	@Produces({ MediaType.TEXT_PLAIN })
 	public String getLayerText(@PathParam("layerId") Long layerId) throws LispParserException, IOException {
-		System.out.println(layerId);
+
 		
 		LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
 		if(layer != null){
@@ -71,4 +71,18 @@ public class LayerResource {
 		}
 		return null;
 	}
+	
+	//curl -H "Accept: text/plain" http://localhost:8080/2049
+	@GET
+	@Produces({ MediaType.TEXT_HTML })
+	public String getLayerHtml(@PathParam("layerId") Long layerId) throws LispParserException, IOException {
+		
+		LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
+		
+		return String.format("<html><body>%s</body></html>", layer.read());
+		
+		
+		
+	}
+
 }
