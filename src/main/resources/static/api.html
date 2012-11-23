@@ -126,6 +126,18 @@
     <p>Returns an array of ids</p>
     <p>Example: <pre>[{"id": 15}]</pre></p>
 	
-  </body>
 
+	<h2>/xml-transform</h2>	
+	<h3>POST</h3>
+    <p>Feed XML to the repo</p>
+    <p>Example: </p> 
+    <pre> find . -name '*.xml' -exec curl -v -X POST -d @{} localhost:8080/xml-transform/ -H "Content-Type: application/xml" \;</pre>
+    <p>Returns </p>
+    <pre>
+    HTTP/1.1 201 Created
+    Location: http://localhost:8080/1080
+    </pre>
+    
+
+</body>
 </html>
