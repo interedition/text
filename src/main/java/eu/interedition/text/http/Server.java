@@ -75,11 +75,11 @@ public class Server extends DefaultResourceConfig {
 
     @Override
     public Set<Object> getSingletons() {
-
-        return Sets.<Object>newHashSet(
-        		injector.getInstance(StaticResource.class),
-        		injector.getInstance(ObjectMapperMessageBodyReaderWriter.class),
-        		injector.getInstance(RepositoryResource.class)
-        		);
+        return Sets.newHashSet(
+                injector.getInstance(StaticResource.class),
+                injector.getInstance(ObjectMapperMessageBodyReaderWriter.class),
+                injector.getInstance(RepositoryResource.class),
+                injector.getInstance(XMLTransformerResource.class)
+        );
     }
 }
