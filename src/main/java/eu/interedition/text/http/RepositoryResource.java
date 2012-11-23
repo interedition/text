@@ -8,7 +8,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -28,7 +27,6 @@ import com.google.inject.name.Named;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
-import eu.interedition.text.TextConstants;
 import eu.interedition.text.TextRepository;
 import eu.interedition.text.h2.H2TextRepository;
 import eu.interedition.text.h2.LayerRelation;
@@ -48,67 +46,35 @@ public class RepositoryResource {
 		this.objectMapper = objectMapper;
 		this.documentationPath = documentationPath;
 	}
-	
 
 	public QueryResult<JsonNode> query(String q) throws LispParserException, IOException {
 		final QueryParser<JsonNode> parser = new QueryParser<JsonNode>(textRepository);
 		final Query query = parser.parse(q);
-		
 		return textRepository.query(query);
 		
 	}
-	
-    @GET
-    @Path("/")
-    public Response stream(@Context Request request) throws IOException {
-        InputStream stream = getClass().getResourceAsStream(this.documentationPath);
-        
 
-        if (request.getMethod().equals("GET")) {
-            final Response.ResponseBuilder preconditions = request.evaluatePreconditions();
-            if (preconditions != null) {
-                Closeables.close(stream, false);
-                throw new WebApplicationException(preconditions.build());
-            }
+	@GET
+	@Produces({ MediaType.TEXT_HTML })
+    public Object api(@Context Request request) throws IOException {
+    	InputStream stream = getClass().getResourceAsStream(this.documentationPath);
+        final Response.ResponseBuilder preconditions = request.evaluatePreconditions();
+        if (preconditions != null) {
+        	Closeables.close(stream, false);
+        	throw new WebApplicationException(preconditions.build());
         }
         return Response.ok()
                 .entity(stream)
-                .build();
-
-    }
-    
-  //test: curl -H "Accept: application/json" -i -X GET http://localhost:8080/2049?q=asdas
+                .build();    		    	
+	}
+	
     @GET
-	@Path("{layerId}")
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Object queryLayer(@PathParam("layerId") Long layerId, @QueryParam("q") String q) throws LispParserException, IOException {
-    	QueryResult<JsonNode> rs = query(q);
-		return rs;
-    }
-    
-	
-	//test: curl -H "Accept: application/json" -i -X GET http://localhost:8080/2049
-	@GET
-	@Path("{layerId}")
-	@Produces({ MediaType.APPLICATION_JSON })
-	public LayerRelation<JsonNode> getLayer(@PathParam("layerId") Long layerId) throws LispParserException, IOException {
-		LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
-		return layer;
-	}
-	
-	//curl -H "Accept: text/plain" http://localhost:8080/2049
-	@GET
-	@Path("{layerId}")
-	@Produces({ MediaType.TEXT_PLAIN })
-	public String getLayerText(@PathParam("layerId") Long layerId) throws LispParserException, IOException {
-		System.out.println(layerId);
-		
-		LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(layerId);
-		if(layer != null){
-			return layer.read();
-		}
-		return null;
-	}
+    public QueryResult<JsonNode> queryRepository(@Context Request request, @QueryParam("q") String q) throws IOException, LispParserException {        	
+        	QueryResult<JsonNode> rs = query(q);
+        	System.out.println(rs);
+        	return rs;    						    		
+    }	
 
 	//test: curl -i -X POST -d '{"name":["http://interedition.eu/ns","base"], "text":"my text"}'
 	//http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
@@ -138,7 +104,6 @@ public class RepositoryResource {
 		result.put("id", layer.getId());
 		return result;
 	}
-
 	
 	
 	private ObjectNode layerToObjectNode(LayerRelation<JsonNode> layer){

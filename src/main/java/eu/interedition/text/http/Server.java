@@ -79,6 +79,7 @@ public class Server extends DefaultResourceConfig {
                 injector.getInstance(StaticResource.class),
                 injector.getInstance(ObjectMapperMessageBodyReaderWriter.class),
                 injector.getInstance(RepositoryResource.class),
+                injector.getInstance(LayerResource.class),
                 injector.getInstance(XMLTransformerResource.class)
         );
     }
