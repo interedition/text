@@ -1,11 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
 		  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
-
-<html>
   <head>
-
-    <title>Text Repository API</title>
+    <title>Text Repository API (eu.interedition.text)</title>
   </head>
 
   <body>
@@ -13,15 +10,15 @@
 	<h2>/</h2>
 	<h3>POST</h3>
 	<p>Examples:</p>
-	<p>Create of a base layer:</p>
-	<pre>curl -i -X POST  -d '{"name":"layerName", "text":"abcd..."}' http://localhost:8080/ 
+	<p>Creation of a base layer:</p>
+	<pre>curl -i -X POST  -d '{"name":"layerName", "text":"abcd..."}' http://localhost:8080/ \
 	-H "Content-Type: application/json"  -H "Accept: application/json"</pre>
 	<p>Returns the id</p>
 	<p>Example: <pre>{"id": 15}</pre></p>
 	
 	<p> Create an annotation</p>
 	<pre>
-	curl -i -X POST http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json" -d
+	curl -i -X POST http://localhost:8080/ -H "Content-Type: application/json" -H "Accept: application/json" -d
 {
     "name": "layerName",
     "text": "comments...",
@@ -71,6 +68,10 @@
     <p>Returns an array of ids</p>
     <p>Example: <pre>[{"id": 15},{"id": 20}]</pre></p>
     
+    <pre>curl 'http://localhost:8080/?q=(any)' -H "Accept: application/json"</pre>
+    <p>Returns all layers</p>
+    <p>Example: <pre>[{"name":["http://www.w3.org/XML/1998/namespace","document"],"anchors":[],"data":null,"id":2},{"name":["http://interedition.eu/ns","text"],"anchors":[{"t":{"name":["http://www.w3.org/XML/1998/namespace","document"],"id":2},"range":[0,1101]}],"data":null,"id":4},...]</pre></p>
+
     <h2>/{id}</h2>
     
 	<h3>GET</h3>
