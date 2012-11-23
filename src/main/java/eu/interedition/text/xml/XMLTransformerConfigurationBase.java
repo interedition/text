@@ -180,7 +180,7 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
 
     @SuppressWarnings("unchecked")
     public void end(Layer<T> target, Reader text) throws IOException {
-        if (!batch.isEmpty()) {
+        if (batchSize > 1 && !batch.isEmpty()) {
             ((BatchLayerAdditionSupport<T>) repository).add(batch);
         }
         if (repository instanceof UpdateSupport) {
