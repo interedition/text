@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
-import eu.interedition.text.h2.H2TextRepository;
+import eu.interedition.text.TextRepository;
 import eu.interedition.text.h2.LayerRelation;
 import eu.interedition.text.lisp.LispParserException;
 import eu.interedition.text.lisp.QueryParser;
@@ -28,12 +28,12 @@ import org.codehaus.jackson.JsonNode;
 @Path("/{id}")
 public class LayerResource {
 
-	private final H2TextRepository<JsonNode> textRepository;
+	private final TextRepository<JsonNode> textRepository;
     private final Configuration templates;
     private final QueryParser<JsonNode> queryParser;
 
     @Inject
-	public LayerResource(H2TextRepository<JsonNode> textRepository, Configuration templates) {
+	public LayerResource(TextRepository<JsonNode> textRepository, Configuration templates) {
 		this.textRepository = textRepository;
         this.templates = templates;
         this.queryParser = new QueryParser<JsonNode>(textRepository);

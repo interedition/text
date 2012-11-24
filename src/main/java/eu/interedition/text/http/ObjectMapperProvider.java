@@ -11,7 +11,7 @@ public class ObjectMapperProvider implements Provider<ObjectMapper> {
 
     @Override
     public ObjectMapper get() {
-        ObjectMapper objectMapper = new ObjectMapper();
+        final ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new TextModule());
         return objectMapper;
     }

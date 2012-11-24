@@ -1,18 +1,24 @@
 package eu.interedition.text.http;
 
+import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import eu.interedition.text.Anchor;
+import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
-import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
+import eu.interedition.text.Text;
+import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
-import eu.interedition.text.h2.H2TextRepository;
-import eu.interedition.text.h2.LayerRelation;
 import eu.interedition.text.lisp.LispParserException;
 import eu.interedition.text.lisp.QueryParser;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Collections;
+import java.util.Set;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -21,7 +27,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -29,81 +36,51 @@ import org.codehaus.jackson.node.ObjectNode;
 @Path("/")
 public class RepositoryResource {
 
-	private TextRepository<JsonNode> textRepository;
+	private TextRepository<JsonNode> repository;
 	private final ObjectMapper objectMapper;
     private final Configuration templates;
+    private QueryParser<JsonNode> queryParser;
 
     @Inject
-	public RepositoryResource(H2TextRepository<JsonNode> textRepository, ObjectMapper objectMapper, Configuration templates) {
-		this.textRepository = textRepository;
+	public RepositoryResource(TextRepository<JsonNode> repository, ObjectMapper objectMapper, Configuration templates) {
+		this.repository = repository;
 		this.objectMapper = objectMapper;
         this.templates = templates;
+        this.queryParser = new QueryParser<JsonNode>(repository);
     }
-
-	public QueryResult<JsonNode> query(String q) throws LispParserException, IOException {
-		final QueryParser<JsonNode> parser = new QueryParser<JsonNode>(textRepository);
-		final Query query = parser.parse(q);
-		return textRepository.query(query);
-		
-	}
 
 	@GET
 	@Produces(MediaType.TEXT_HTML)
     public Template api() throws IOException {
         return templates.getTemplate("api.ftl");
 	}
-	
+
     @GET
 	@Produces(MediaType.APPLICATION_JSON)
-    public QueryResult<JsonNode> queryRepository(@Context Request request, @QueryParam("q") String q) throws IOException, LispParserException {        	
-        	QueryResult<JsonNode> rs = query(q);
-        	System.out.println(rs);
-        	return rs;    						    		
-    }	
+    public QueryResult<JsonNode> query(@QueryParam("q") String query) throws IOException, LispParserException {
+        return repository.query(queryParser.parse(query));
+    }
 
-	//test: curl -i -X POST -d '{"name":["http://interedition.eu/ns","base"], "text":"my text"}'
-	//http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Object postLayer(JsonNode layerJSON) {
-		
-		System.out.println(layerJSON.toString());
-		
-		LayerRelation<JsonNode> layer = null;
-		try {
-			if(layerJSON.get("anchors") == null){
-				layer = (LayerRelation<JsonNode>) this.textRepository.add(
-						new Name(
-								layerJSON.get("name").get(0).toString(), layerJSON.get("name").get(1).toString()),
-						new StringReader(layerJSON.get("text").toString()), null);	
-			}else{
-				//TODO set the anchors (annotation)
-			}
-			
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		ObjectNode result = objectMapper.createObjectNode();
-		result.put("id", layer.getId());
-		return result;
-	}
-	
-	
-	private ObjectNode layerToObjectNode(LayerRelation<JsonNode> layer){
-		ObjectNode result = objectMapper.createObjectNode();
-		if(layer != null){
-			result.put("id", layer.getId());
-			result.put("name", layer.getName().getLocalName());
-			try {
-				result.put("text", layer.read());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			//TODO put the range in the json object
-		}
-		return result;
+	public Response create(ObjectNode data, @Context UriInfo uriInfo) throws IOException {
+        final JsonNode nameNode = Preconditions.checkNotNull(data.remove("name"), "No name given");
+        final JsonNode anchorsNode = data.remove("anchors");
+        final JsonNode textNode = data.remove("text");
+
+        final Name name = objectMapper.readValue(nameNode, Name.class);
+        final StringReader textReader = new StringReader(textNode == null ? "" : textNode.asText());
+        final Set<Anchor> anchors = Sets.newHashSet();
+        for (JsonNode anchorNode : Objects.firstNonNull(anchorsNode, Collections.<JsonNode>emptySet())) {
+            Preconditions.checkArgument(anchorNode.isArray() && anchorNode.size() > 2, anchorNode.toString());
+            final Text text = Preconditions.checkNotNull(repository.findByIdentifier(anchorNode.get(0).asLong()), anchorNode.get(0).toString());
+            final long rangeStart = anchorNode.get(1).asLong();
+            final long rangeEnd = anchorNode.get(2).asLong();
+            anchors.add(new Anchor(text, new TextRange(rangeStart, rangeEnd)));
+        }
+
+        final Layer<JsonNode> created = repository.add(name, textReader, data, anchors);
+        return Response.created(uriInfo.getBaseUriBuilder().path("/" + created.getId()).build()).build();
 	}
 
 }

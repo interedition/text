@@ -9,7 +9,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 import com.sun.jersey.api.core.DefaultResourceConfig;
-import eu.interedition.text.h2.H2TextRepository;
+import eu.interedition.text.TextRepository;
 import freemarker.template.Configuration;
 import java.io.IOException;
 import java.net.URI;
@@ -39,7 +39,7 @@ public class Server extends DefaultResourceConfig {
             @Override
             protected void configure() {
                 bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class).asEagerSingleton();
-                bind(new TypeLiteral<H2TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
+                bind(new TypeLiteral<TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
                 bind(Configuration.class).toProvider(TemplateConfigurationProvider.class).asEagerSingleton();
             }
         });

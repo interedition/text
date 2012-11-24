@@ -1,5 +1,6 @@
 package eu.interedition.text.json;
 
+import eu.interedition.text.Name;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.map.module.SimpleModule;
 
@@ -17,7 +18,7 @@ public class TextModule extends SimpleModule {
         addSerializer(new QueryResultSerializer());
         addSerializer(new TextStreamSerializer());
 
-        //addDeserializer(Name.class, new NameDeserializer());
+        addDeserializer(Name.class, new NameDeserializer());
         //addDeserializer(TextRange.class, new RangeDeserializer());
     }
 

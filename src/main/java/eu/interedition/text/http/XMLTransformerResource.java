@@ -8,7 +8,7 @@ import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.TextConstants;
-import eu.interedition.text.h2.H2TextRepository;
+import eu.interedition.text.TextRepository;
 import eu.interedition.text.simple.SimpleLayer;
 import eu.interedition.text.xml.XMLTransformer;
 import eu.interedition.text.xml.XMLTransformerConfigurationBase;
@@ -56,13 +56,13 @@ import static eu.interedition.text.TextConstants.TEI_NS;
 public class XMLTransformerResource {
 
     public static final Charset CHARSET = Charset.forName("UTF-8");
-    private final H2TextRepository<JsonNode> textRepository;
+    private final TextRepository<JsonNode> textRepository;
     private final Configuration templates;
     private final ObjectMapper objectMapper;
     private TransformerFactory transformerFactory;
 
     @Inject
-    public XMLTransformerResource(H2TextRepository<JsonNode> textRepository, Configuration templates, final ObjectMapper objectMapper) {
+    public XMLTransformerResource(TextRepository<JsonNode> textRepository, Configuration templates, final ObjectMapper objectMapper) {
         this.textRepository = textRepository;
         this.templates = templates;
         this.objectMapper = objectMapper;
