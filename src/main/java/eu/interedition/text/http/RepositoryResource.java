@@ -1,29 +1,6 @@
 package eu.interedition.text.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
-
-import com.google.common.io.Closeables;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
-
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
@@ -32,20 +9,36 @@ import eu.interedition.text.h2.H2TextRepository;
 import eu.interedition.text.h2.LayerRelation;
 import eu.interedition.text.lisp.LispParserException;
 import eu.interedition.text.lisp.QueryParser;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import java.io.IOException;
+import java.io.StringReader;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
 @Path("/")
 public class RepositoryResource {
 
 	private TextRepository<JsonNode> textRepository;
 	private final ObjectMapper objectMapper;
-	private String documentationPath;
-	
-	@Inject
-	public RepositoryResource(H2TextRepository<JsonNode> textRepository, ObjectMapper objectMapper, @Named("interedition.documentation_path") String documentationPath) {
+    private final Configuration templates;
+
+    @Inject
+	public RepositoryResource(H2TextRepository<JsonNode> textRepository, ObjectMapper objectMapper, Configuration templates) {
 		this.textRepository = textRepository;
 		this.objectMapper = objectMapper;
-		this.documentationPath = documentationPath;
-	}
+        this.templates = templates;
+    }
 
 	public QueryResult<JsonNode> query(String q) throws LispParserException, IOException {
 		final QueryParser<JsonNode> parser = new QueryParser<JsonNode>(textRepository);
@@ -55,17 +48,9 @@ public class RepositoryResource {
 	}
 
 	@GET
-	@Produces({ MediaType.TEXT_HTML })
-    public Object api(@Context Request request) throws IOException {
-    	InputStream stream = getClass().getResourceAsStream(this.documentationPath);
-        final Response.ResponseBuilder preconditions = request.evaluatePreconditions();
-        if (preconditions != null) {
-        	Closeables.close(stream, false);
-        	throw new WebApplicationException(preconditions.build());
-        }
-        return Response.ok()
-                .entity(stream)
-                .build();    		    	
+	@Produces(MediaType.TEXT_HTML)
+    public Template api() throws IOException {
+        return templates.getTemplate("api.ftl");
 	}
 	
     @GET

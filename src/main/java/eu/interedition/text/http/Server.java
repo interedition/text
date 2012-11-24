@@ -10,6 +10,7 @@ import com.google.inject.name.Names;
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import eu.interedition.text.h2.H2TextRepository;
+import freemarker.template.Configuration;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
@@ -39,6 +40,7 @@ public class Server extends DefaultResourceConfig {
             protected void configure() {
                 bind(new TypeLiteral<H2TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
                 bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class).asEagerSingleton();
+                bind(Configuration.class).toProvider(TemplateConfigurationProvider.class).asEagerSingleton();
             }
         });
 
@@ -78,6 +80,7 @@ public class Server extends DefaultResourceConfig {
         return Sets.newHashSet(
                 injector.getInstance(StaticResource.class),
                 injector.getInstance(ObjectMapperMessageBodyReaderWriter.class),
+                injector.getInstance(TemplateMessageBodyWriter.class),
                 injector.getInstance(RepositoryResource.class),
                 injector.getInstance(LayerResource.class),
                 injector.getInstance(XMLTransformerResource.class)
