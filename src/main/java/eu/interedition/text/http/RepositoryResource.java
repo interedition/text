@@ -54,7 +54,7 @@ public class RepositoryResource {
 	}
 	
     @GET
-	@Produces({ MediaType.APPLICATION_JSON })
+	@Produces(MediaType.APPLICATION_JSON)
     public QueryResult<JsonNode> queryRepository(@Context Request request, @QueryParam("q") String q) throws IOException, LispParserException {        	
         	QueryResult<JsonNode> rs = query(q);
         	System.out.println(rs);
@@ -64,8 +64,8 @@ public class RepositoryResource {
 	//test: curl -i -X POST -d '{"name":["http://interedition.eu/ns","base"], "text":"my text"}'
 	//http://localhost:8080/ -H "Content-Type: application/json"  -H "Accept: application/json"
 	@POST
-	@Consumes({ MediaType.APPLICATION_JSON })
-	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Object postLayer(JsonNode layerJSON) {
 		
 		System.out.println(layerJSON.toString());

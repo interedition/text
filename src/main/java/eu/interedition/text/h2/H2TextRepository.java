@@ -58,17 +58,18 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
     private final DataSource ds;
     private final boolean transactional;
 
-    private final DataMapper<T> dataMapper = new SerializableDataMapper<T>();
+    private final DataMapper<T> dataMapper;
 
     private final H2Query<T> query = new H2Query<T>();
     private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
 
     public H2TextRepository(Class<T> dataType, DataSource ds) {
-        this(dataType, ds, true);
+        this(dataType,  new SerializableDataMapper<T>(), ds, true);
     }
 
-    public H2TextRepository(Class<T> dataType, DataSource ds, boolean transactional) {
+    public H2TextRepository(Class<T> dataType, DataMapper<T> dataMapper, DataSource ds, boolean transactional) {
         this.dataType = dataType;
+        this.dataMapper = dataMapper;
         this.ds = ds;
         this.transactional = transactional;
     }
@@ -307,6 +308,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
                 update.setLong(2, ((LayerRelation<?>) target).getId());
                 update.executeUpdate();
 
+                commit(connection);
             } catch (SQLException e) {
                 throw rollbackAndConvert(connection, e);
             } finally {

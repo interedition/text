@@ -20,6 +20,7 @@
 package eu.interedition.text;
 
 import eu.interedition.text.h2.H2TextRepository;
+import eu.interedition.text.h2.SerializableDataMapper;
 import eu.interedition.text.simple.KeyValues;
 import eu.interedition.text.simple.SimpleTextRepository;
 import java.io.IOException;
@@ -59,7 +60,7 @@ public abstract class AbstractTextTest extends AbstractTest {
                 url.append(";TRACE_LEVEL_SYSTEM_OUT=2");
             }
             h2DataSource = JdbcConnectionPool.create(url.toString(), "sa", "");
-            h2Repository = new H2TextRepository<KeyValues>(KeyValues.class, h2DataSource, false).withSchema();
+            h2Repository = new H2TextRepository<KeyValues>(KeyValues.class, new SerializableDataMapper<KeyValues>(), h2DataSource, false).withSchema();
         }
         return h2Repository;
     }

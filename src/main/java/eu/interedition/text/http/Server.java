@@ -38,8 +38,8 @@ public class Server extends DefaultResourceConfig {
         final Injector injector = Guice.createInjector(new ConfigurationModule(), new AbstractModule() {
             @Override
             protected void configure() {
-                bind(new TypeLiteral<H2TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
                 bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class).asEagerSingleton();
+                bind(new TypeLiteral<H2TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
                 bind(Configuration.class).toProvider(TemplateConfigurationProvider.class).asEagerSingleton();
             }
         });
