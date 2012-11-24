@@ -1,5 +1,6 @@
 package eu.interedition.text.neo4j;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -19,24 +20,34 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.graphdb.traversal.TraversalDescription;
+import org.neo4j.index.lucene.QueryContext;
+import org.neo4j.index.lucene.ValueContext;
 import org.neo4j.kernel.Traversal;
 import org.neo4j.kernel.Uniqueness;
 
 import static eu.interedition.text.neo4j.LayerNode.Relationships.ANCHORS;
-import static eu.interedition.text.neo4j.LayerNode.Relationships.PRIMES;
+import static eu.interedition.text.neo4j.LayerNode.Relationships.HAS_TEXT;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<T> {
+    private final Logger LOG = Logger.getLogger(getClass().getName());
 
+    private final Neo4jIndexQuery indexQuery = new Neo4jIndexQuery();
     private final Class<T> dataType;
     private final DataNodeMapper<T> dataNodeMapper;
     private final GraphDatabaseService db;
@@ -59,27 +70,51 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     }
 
     @Override
-    public QueryResult<T> query(Query query) {
+    public QueryResult<T> query(final Query query) {
         final Transaction tx = begin();
-        try {
-            return new QueryResult<T>() {
-                @Override
-                public void close() throws IOException {
-                }
+        return new QueryResult<T>() {
+            @Override
+            public void close() throws IOException {
+                commit(tx);
+            }
 
-                @Override
-                public Iterator<Layer<T>> iterator() {
-                    return new AbstractIterator<Layer<T>>() {
-                        @Override
-                        protected Layer<T> computeNext() {
-                            return endOfData();
-                        }
-                    };
+            @Override
+            public Iterator<Layer<T>> iterator() {
+                final org.apache.lucene.search.Query luceneQuery = indexQuery.build(query);
+                if (LOG.isLoggable(Level.FINE)) {
+                    LOG.log(Level.FINE, "Lucene Query: {0}", luceneQuery);
                 }
-            };
-        } finally {
-            commit(tx);
-        }
+                final Iterator<Relationship> relationships = index().query(
+                        new QueryContext(luceneQuery).sort(new Sort(new SortField("id", SortField.LONG)))
+                ).iterator();
+
+                return new AbstractIterator<Layer<T>>() {
+                    long last = 0;
+
+                    @Override
+                    protected Layer<T> computeNext() {
+                        while (relationships.hasNext()) {
+                            Node layerNode = null;
+
+                            final Relationship rel = relationships.next();
+                            final RelationshipType relType = rel.getType();
+                            if (relType.equals(ANCHORS)) {
+                                layerNode = rel.getStartNode();
+                            } else if (relType.equals(HAS_TEXT)) {
+                                layerNode = rel.getEndNode();
+                            }
+                            Preconditions.checkState(layerNode != null, relType);
+
+                            if (layerNode.getId() != last) {
+                                last = layerNode.getId();
+                                return new LayerNode<T>(Neo4jTextRepository.this, layerNode);
+                            }
+                        }
+                        return endOfData();
+                    }
+                };
+            }
+        };
     }
 
     @Override
@@ -89,33 +124,51 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
             final Node node = db.createNode();
 
             final URI namespace = name.getNamespace();
-            if (namespace != null) {
+            final String localName = name.getLocalName();
+            final String ns = (namespace == null ? "" : namespace.toString());
+            if (!ns.isEmpty()) {
                 node.setProperty(LayerNode.NAME_NS, name.getNamespace().toString());
             }
-            node.setProperty(LayerNode.NAME_LN, name.getLocalName());
+            node.setProperty(LayerNode.NAME_LN, localName);
             node.setProperty(LayerNode.TEXT, CharStreams.toString(text));
             dataNodeMapper.write(data, node);
 
-            boolean baseLayer = true;
+            final RelationshipIndex index = index();
+
             for (Anchor anchor : anchors) {
                 final Text anchorText = anchor.getText();
                 if (anchorText instanceof LayerNode) {
-                    final Relationship anchorRel = node.createRelationshipTo(((LayerNode) anchorText).node, ANCHORS);
+                    final Node anchorTextNode = ((LayerNode) anchorText).node;
+                    final Relationship anchorRel = node.createRelationshipTo(anchorTextNode, ANCHORS);
 
                     final TextRange anchorRange = anchor.getRange();
-                    anchorRel.setProperty(LayerNode.RANGE_START, anchorRange.getStart());
-                    anchorRel.setProperty(LayerNode.RANGE_END, anchorRange.getEnd());
+                    final long rangeStart = anchorRange.getStart();
+                    final long rangeEnd = anchorRange.getEnd();
 
-                    baseLayer = false;
+                    anchorRel.setProperty(LayerNode.RANGE_START, rangeStart);
+                    anchorRel.setProperty(LayerNode.RANGE_END, rangeEnd);
+
+                    index.add(anchorRel, "id", ValueContext.numeric(node.getId()));
+                    index.add(anchorRel, "text", ValueContext.numeric(anchorTextNode.getId()));
+                    index.add(anchorRel, "from", ValueContext.numeric(rangeStart));
+                    index.add(anchorRel, "to", ValueContext.numeric(rangeEnd));
+                    index.add(anchorRel, "len", ValueContext.numeric(anchorRange.length()));
                 }
             }
-            if (baseLayer) {
-                db.getReferenceNode().createRelationshipTo(node, PRIMES);
-            }
+
+            final Relationship textRel = db.getReferenceNode().createRelationshipTo(node, HAS_TEXT);
+            index.add(textRel, "id", ValueContext.numeric(node.getId()));
+            index.add(textRel, "ns", ns);
+            index.add(textRel, "ln", localName);
+
             return new LayerNode<T>(this, node);
         } finally {
             commit(tx);
         }
+    }
+
+    protected RelationshipIndex index() {
+        return db.index().forRelationships("anchors");
     }
 
     @Override
@@ -136,7 +189,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
                 }
             }
             for (Node node : nodes) {
-                for (Relationship primeRel : node.getRelationships(PRIMES)) {
+                for (Relationship primeRel : node.getRelationships(HAS_TEXT)) {
                     primeRel.delete();
                 }
                 node.delete();

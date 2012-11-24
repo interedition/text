@@ -19,7 +19,6 @@
  */
 package eu.interedition.text.xml;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -61,8 +60,7 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
     }
 
     public XMLTransformerConfigurationBase<T> withBatchSize(int batchSize) {
-        Preconditions.checkArgument(batchSize < 2 || repository instanceof BatchLayerAdditionSupport);
-        this.batchSize = Math.max(1, batchSize);
+        this.batchSize = Math.max(1, (repository instanceof BatchLayerAdditionSupport ? batchSize : 1));
         this.batch = Lists.newArrayListWithCapacity(this.batchSize);
         return this;
     }

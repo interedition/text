@@ -10,7 +10,7 @@ import org.neo4j.graphdb.Node;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SerializeDataNodeMapper<T> implements DataNodeMapper<T> {
+public class SerializableDataNodeMapper<T> implements DataNodeMapper<T> {
 
     private static final String DATA = "data";
 

@@ -19,10 +19,14 @@
  */
 package eu.interedition.text;
 
+import com.google.common.io.Files;
 import eu.interedition.text.h2.H2TextRepository;
 import eu.interedition.text.h2.SerializableDataStreamMapper;
+import eu.interedition.text.neo4j.Neo4jTextRepository;
+import eu.interedition.text.neo4j.SerializableDataNodeMapper;
 import eu.interedition.text.simple.KeyValues;
 import eu.interedition.text.simple.SimpleTextRepository;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -32,6 +36,8 @@ import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
  * Base class for tests using an in-memory document model.
@@ -46,12 +52,67 @@ public abstract class AbstractTextTest extends AbstractTest {
     private static H2TextRepository<KeyValues> h2Repository;
     private static DataSource h2DataSource;
 
+    private static Neo4jTextRepository<KeyValues> graphRepository;
+    private static File graphTempDataDir;
+    private static EmbeddedGraphDatabase graphDatabase;
+
     protected TextRepository<KeyValues> repository;
 
     /**
      * The in-memory document model to run tests against.
      */
     private Layer<KeyValues> layer;
+    private Transaction graphTransaction;
+
+    /**
+     * Creates a new document model before every test.
+     */
+    public Layer<KeyValues> testText() throws IOException {
+        if (layer == null) {
+            this.layer = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "test"), new StringReader(getTestText()), null);
+        }
+        return layer;
+    }
+
+    /**
+     * Removes the document model.
+     */
+    @After
+    public void cleanTestText() throws IOException {
+        if (layer != null) {
+            repository.delete(Collections.singleton(this.layer));
+            layer = null;
+        }
+    }
+
+    String getTestText() {
+        return TEST_TEXT;
+    }
+
+    @Before
+    public void initRepository() throws SQLException, IOException {
+        final String repo = System.getProperty("interedition.text.repo", "mem").toLowerCase();
+        if ("mem".equals(repo)) {
+            repository = new SimpleTextRepository<KeyValues>();
+        } else if ("h2".equals(repo)) {
+            repository = h2Repository();
+        } else if ("neo4j".equals(repo)) {
+            repository = graphRepository();
+            graphTransaction = graphDatabase.beginTx();
+        } else {
+            throw new IllegalArgumentException(repo);
+        }
+    }
+
+    private static Neo4jTextRepository<KeyValues> graphRepository() throws IOException {
+        if (graphRepository == null) {
+            graphTempDataDir = Files.createTempDir();
+            graphDatabase = new EmbeddedGraphDatabase(graphTempDataDir.getCanonicalPath());
+            graphRepository = new Neo4jTextRepository<KeyValues>(KeyValues.class, new SerializableDataNodeMapper<KeyValues>(), graphDatabase, false);
+        }
+
+        return graphRepository;
+    }
 
     private static H2TextRepository<KeyValues> h2Repository() throws SQLException {
         if (h2Repository == null) {
@@ -69,6 +130,15 @@ public abstract class AbstractTextTest extends AbstractTest {
     public static void closeDataSource() {
         h2Repository = null;
         h2DataSource = null;
+        if (graphRepository != null) {
+            graphRepository = null;
+
+            graphDatabase.shutdown();
+            graphDatabase = null;
+
+            delete(graphTempDataDir);
+            graphTempDataDir = null;
+        }
     }
 
     @After
@@ -76,42 +146,19 @@ public abstract class AbstractTextTest extends AbstractTest {
         if (h2Repository != null) {
             h2Repository.clearNameCache();
         }
-    }
-
-    /**
-     * Creates a new document model before every test.
-     */
-    public Layer<KeyValues> testText() throws IOException {
-        if (layer == null) {
-            this.layer = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "test"), new StringReader(getTestText()), null);
-        }
-        return layer;
-    }
-
-    @Before
-    public void initRepository() throws SQLException {
-        final String repo = System.getProperty("interedition.text.repo", "mem").toLowerCase();
-        if ("mem".equals(repo)) {
-            repository = new SimpleTextRepository<KeyValues>();
-        } else if ("h2".equals(repo)) {
-            repository = h2Repository();
-        } else {
-            throw new IllegalArgumentException(repo);
+        if (graphTransaction != null) {
+            graphTransaction.finish();
+            graphTransaction = null;
         }
     }
 
-    /**
-     * Removes the document model.
-     */
-    @After
-    public void cleanTestText() throws IOException {
-        if (layer != null) {
-            repository.delete(Collections.singleton(this.layer));
-            layer = null;
+    private static void delete(File file) {
+        if (file.isDirectory()) {
+            for (File contained : file.listFiles()) {
+                delete(contained);
+            }
         }
+        file.delete();
     }
 
-    String getTestText() {
-        return TEST_TEXT;
-    }
 }

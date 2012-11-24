@@ -32,7 +32,7 @@ public class LayerNode<T> implements Layer<T> {
     static final String TEXT = "text";
 
     public enum Relationships implements RelationshipType {
-        ANCHORS, PRIMES
+        ANCHORS, HAS_TEXT
     }
 
     final Neo4jTextRepository<T> repository;
