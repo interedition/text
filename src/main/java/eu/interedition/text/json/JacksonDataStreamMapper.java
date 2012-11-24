@@ -1,6 +1,6 @@
 package eu.interedition.text.json;
 
-import eu.interedition.text.h2.DataMapper;
+import eu.interedition.text.h2.DataStreamMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,17 +11,17 @@ import org.codehaus.jackson.map.ObjectMapper;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class JacksonDataMapper<T> implements DataMapper<T> {
+public class JacksonDataStreamMapper<T> implements DataStreamMapper<T> {
 
     private final ObjectMapper objectMapper;
 
-    public JacksonDataMapper(ObjectMapper objectMapper) {
+    public JacksonDataStreamMapper(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
 
     }
 
     @Override
-    public void serialize(T data, OutputStream stream) throws IOException {
+    public void write(T data, OutputStream stream) throws IOException {
         final JsonGenerator jg = this.objectMapper.getJsonFactory().createJsonGenerator(stream);
         jg.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         try {
@@ -32,7 +32,7 @@ public class JacksonDataMapper<T> implements DataMapper<T> {
     }
 
     @Override
-    public T deserialize(InputStream stream, Class<T> type) throws IOException {
+    public T read(InputStream stream, Class<T> type) throws IOException {
         final JsonParser jp = this.objectMapper.getJsonFactory().createJsonParser(stream);
         jp.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
         try {
@@ -40,6 +40,5 @@ public class JacksonDataMapper<T> implements DataMapper<T> {
         } finally {
             jp.close();
         }
-
     }
 }

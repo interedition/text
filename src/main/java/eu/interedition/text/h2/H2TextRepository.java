@@ -58,18 +58,18 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
     private final DataSource ds;
     private final boolean transactional;
 
-    private final DataMapper<T> dataMapper;
+    private final DataStreamMapper<T> dataStreamMapper;
 
     private final H2Query<T> query = new H2Query<T>();
     private final Iterator<Long> primaryKeySource = new PrimaryKeySource(this);
 
     public H2TextRepository(Class<T> dataType, DataSource ds) {
-        this(dataType,  new SerializableDataMapper<T>(), ds, true);
+        this(dataType,  new SerializableDataStreamMapper<T>(), ds, true);
     }
 
-    public H2TextRepository(Class<T> dataType, DataMapper<T> dataMapper, DataSource ds, boolean transactional) {
+    public H2TextRepository(Class<T> dataType, DataStreamMapper<T> dataStreamMapper, DataSource ds, boolean transactional) {
         this.dataType = dataType;
-        this.dataMapper = dataMapper;
+        this.dataStreamMapper = dataStreamMapper;
         this.ds = ds;
         this.transactional = transactional;
     }
@@ -165,7 +165,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
                     final Blob dataBlob = connection.createBlob();
                     OutputStream dataStream = null;
                     try {
-                        dataMapper.serialize(data, dataStream = dataBlob.setBinaryStream(1));
+                        dataStreamMapper.write(data, dataStream = dataBlob.setBinaryStream(1));
                     } finally {
                         Closeables.close(dataStream, false);
                     }
@@ -495,6 +495,6 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
     }
 
     public T data(InputStream stream) throws IOException {
-        return dataMapper.deserialize(stream, dataType);
+        return dataStreamMapper.read(stream, dataType);
     }
 }

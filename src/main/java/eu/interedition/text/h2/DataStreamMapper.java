@@ -7,9 +7,9 @@ import java.io.OutputStream;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public interface DataMapper<T> {
+public interface DataStreamMapper<T> {
 
-    void serialize(T data, OutputStream stream) throws IOException;
+    T read(InputStream stream, Class<T> type) throws IOException;
 
-    T deserialize(InputStream stream, Class<T> type) throws IOException;
+    void write(T data, OutputStream stream) throws IOException;
 }

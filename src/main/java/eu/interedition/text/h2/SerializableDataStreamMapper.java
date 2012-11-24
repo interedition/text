@@ -9,10 +9,10 @@ import java.io.OutputStream;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SerializableDataMapper<T> implements DataMapper<T> {
+public class SerializableDataStreamMapper<T> implements DataStreamMapper<T> {
 
     @Override
-    public void serialize(T data, OutputStream stream) throws IOException {
+    public void write(T data, OutputStream stream) throws IOException {
         final ObjectOutputStream objectStream = new ObjectOutputStream(stream);
         objectStream.writeObject(data);
         objectStream.flush();
@@ -20,7 +20,7 @@ public class SerializableDataMapper<T> implements DataMapper<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public T deserialize(InputStream stream, Class<T> type) throws IOException {
+    public T read(InputStream stream, Class<T> type) throws IOException {
         final ObjectInputStream objectStream = new ObjectInputStream(stream);
         try {
             return (T) objectStream.readObject();
