@@ -55,6 +55,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     private final DataNodeMapper<T> dataNodeMapper;
     private final GraphDatabaseService db;
     private final boolean transactional;
+    private Node base;
 
     public Neo4jTextRepository(Class<T> dataType, DataNodeMapper<T> dataNodeMapper, GraphDatabaseService db, boolean transactional) {
         this.dataType = dataType;
@@ -119,7 +120,10 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     public Iterable<Layer<T>> add(Iterable<Layer<T>> batch) throws IOException {
         final Transaction tx = begin();
         try {
-            List<Layer<T>> created = Lists.newLinkedList();
+            final Node baseNode = baseNode();
+            final RelationshipIndex index = index();
+
+            final List<Layer<T>> created = Lists.newLinkedList();
             for (Layer<T> layer : batch) {
                 final Node node = db.createNode();
 
@@ -133,8 +137,6 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
                 node.setProperty(LayerNode.NAME_LN, localName);
                 node.setProperty(LayerNode.TEXT, layer.read());
                 dataNodeMapper.write(layer.data(), node);
-
-                final RelationshipIndex index = index();
 
                 for (Anchor anchor : layer.getAnchors()) {
                     final Text anchorText = anchor.getText();
@@ -159,13 +161,27 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
                     }
                 }
 
-                db.getReferenceNode().createRelationshipTo(node, HAS_TEXT);
+                baseNode.createRelationshipTo(node, HAS_TEXT);
                 created.add(new LayerNode<T>(this, node));
             }
             return created;
         } finally {
             commit(tx);
         }
+    }
+
+    protected Node baseNode() {
+        if (base == null) {
+            synchronized (this) {
+                final Node referenceNode = db.getReferenceNode();
+                Relationship baseRel = referenceNode.getSingleRelationship(HAS_TEXT, Direction.OUTGOING);
+                if (baseRel == null) {
+                    baseRel = referenceNode.createRelationshipTo(db.createNode(), HAS_TEXT);
+                }
+                base = baseRel.getEndNode();
+            }
+        }
+        return base;
     }
 
     protected RelationshipIndex index() {
