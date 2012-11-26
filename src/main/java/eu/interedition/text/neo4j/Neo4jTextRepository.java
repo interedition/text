@@ -1,6 +1,5 @@
 package eu.interedition.text.neo4j;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -29,7 +28,6 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.graphdb.traversal.TraversalDescription;
@@ -94,17 +92,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
                     @Override
                     protected Layer<T> computeNext() {
                         while (relationships.hasNext()) {
-                            Node layerNode = null;
-
-                            final Relationship rel = relationships.next();
-                            final RelationshipType relType = rel.getType();
-                            if (relType.equals(ANCHORS)) {
-                                layerNode = rel.getStartNode();
-                            } else if (relType.equals(HAS_TEXT)) {
-                                layerNode = rel.getEndNode();
-                            }
-                            Preconditions.checkState(layerNode != null, relType);
-
+                            final Node layerNode = relationships.next().getStartNode();
                             if (layerNode.getId() != last) {
                                 last = layerNode.getId();
                                 return new LayerNode<T>(Neo4jTextRepository.this, layerNode);
@@ -127,7 +115,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
             final String localName = name.getLocalName();
             final String ns = (namespace == null ? "" : namespace.toString());
             if (!ns.isEmpty()) {
-                node.setProperty(LayerNode.NAME_NS, name.getNamespace().toString());
+                node.setProperty(LayerNode.NAME_NS, ns);
             }
             node.setProperty(LayerNode.NAME_LN, localName);
             node.setProperty(LayerNode.TEXT, CharStreams.toString(text));
@@ -150,17 +138,15 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
 
                     index.add(anchorRel, "id", ValueContext.numeric(node.getId()));
                     index.add(anchorRel, "text", ValueContext.numeric(anchorTextNode.getId()));
-                    index.add(anchorRel, "from", ValueContext.numeric(rangeStart));
-                    index.add(anchorRel, "to", ValueContext.numeric(rangeEnd));
+                    index.add(anchorRel, "rs", ValueContext.numeric(rangeStart));
+                    index.add(anchorRel, "re", ValueContext.numeric(rangeEnd));
                     index.add(anchorRel, "len", ValueContext.numeric(anchorRange.length()));
+                    index.add(anchorRel, "ns", ns);
+                    index.add(anchorRel, "ln", localName);
                 }
             }
 
-            final Relationship textRel = db.getReferenceNode().createRelationshipTo(node, HAS_TEXT);
-            index.add(textRel, "id", ValueContext.numeric(node.getId()));
-            index.add(textRel, "ns", ns);
-            index.add(textRel, "ln", localName);
-
+            db.getReferenceNode().createRelationshipTo(node, HAS_TEXT);
             return new LayerNode<T>(this, node);
         } finally {
             commit(tx);
@@ -179,16 +165,22 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     @Override
     public void delete(Iterable<Layer<T>> layers) {
         final Transaction tx = begin();
+        final RelationshipIndex index = index();
         try {
             final Set<Node> nodes = Sets.newHashSet();
             for (LayerNode<?> toDelete : Iterables.filter(layers, LayerNode.class)) {
                 nodes.add(toDelete.node);
                 for (Relationship anchorRel : TRANSITIVE_ANCHORING.traverse(toDelete.node).relationships()) {
                     nodes.add(anchorRel.getStartNode());
+                    index.remove(anchorRel);
                     anchorRel.delete();
                 }
             }
             for (Node node : nodes) {
+                for (Relationship anchorRel : node.getRelationships(ANCHORS, Direction.OUTGOING)) {
+                    index.remove(anchorRel);
+                    anchorRel.delete();
+                }
                 for (Relationship primeRel : node.getRelationships(HAS_TEXT)) {
                     primeRel.delete();
                 }

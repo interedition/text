@@ -1,6 +1,8 @@
 package eu.interedition.text.neo4j;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import eu.interedition.text.Anchor;
@@ -129,5 +131,24 @@ public class LayerNode<T> implements Layer<T> {
         } catch (IOException e) {
             throw Throwables.propagate(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(getName()).addValue(Iterables.toString(getAnchors())).toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj != null && obj instanceof LayerNode) {
+            LayerNode<?> other = (LayerNode<?>) obj;
+            return (node.equals(other.node));
+        }
+        return super.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return node.hashCode();
     }
 }
