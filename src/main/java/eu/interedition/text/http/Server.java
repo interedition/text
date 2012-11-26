@@ -39,7 +39,7 @@ public class Server extends DefaultResourceConfig {
             @Override
             protected void configure() {
                 bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class).asEagerSingleton();
-                bind(new TypeLiteral<TextRepository<JsonNode>>() {}).toProvider(H2TextRepositoryProvider.class).asEagerSingleton();
+                bind(new TypeLiteral<TextRepository<JsonNode>>() {}).toProvider(Neo4jTextRepositoryProvider.class).asEagerSingleton();
                 bind(Configuration.class).toProvider(TemplateConfigurationProvider.class).asEagerSingleton();
             }
         });

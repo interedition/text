@@ -208,7 +208,12 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     @Override
     public void updateText(Layer<T> target, Reader text) throws IOException {
         if (target instanceof LayerNode) {
-            ((LayerNode<T>) target).node.setProperty(LayerNode.TEXT, CharStreams.toString(text));
+            final Transaction tx = begin();
+            try {
+                ((LayerNode<T>) target).node.setProperty(LayerNode.TEXT, CharStreams.toString(text));
+            } finally {
+                commit(tx);
+            }
         }
     }
 

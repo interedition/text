@@ -5,7 +5,6 @@ import eu.interedition.text.Layer;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextRepository;
-import eu.interedition.text.h2.LayerRelation;
 import eu.interedition.text.lisp.LispParserException;
 import eu.interedition.text.lisp.QueryParser;
 import freemarker.template.Configuration;
@@ -59,7 +58,7 @@ public class LayerResource {
 	@Produces(MediaType.TEXT_HTML)
 	public String html(@PathParam("id") Long id) throws LispParserException, IOException, TemplateException {
         //curl -H "Accept: text/html" http://localhost:8080/2049
-        final LayerRelation<JsonNode> layer = (LayerRelation<JsonNode>)this.textRepository.findByIdentifier(id);
+        final Layer<JsonNode> layer = this.textRepository.findByIdentifier(id);
         if (layer == null) {
             return null;
         }
