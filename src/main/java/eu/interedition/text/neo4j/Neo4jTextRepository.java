@@ -2,6 +2,7 @@ package eu.interedition.text.neo4j;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
 import eu.interedition.text.Anchor;
@@ -12,12 +13,16 @@ import eu.interedition.text.QueryResult;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
+import eu.interedition.text.simple.SimpleLayer;
+import eu.interedition.text.util.BatchLayerAdditionSupport;
 import eu.interedition.text.util.UpdateSupport;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,7 +47,7 @@ import static eu.interedition.text.neo4j.LayerNode.Relationships.HAS_TEXT;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<T> {
+public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<T>, BatchLayerAdditionSupport<T> {
     private final Logger LOG = Logger.getLogger(getClass().getName());
 
     private final Neo4jIndexQuery indexQuery = new Neo4jIndexQuery();
@@ -107,47 +112,57 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
 
     @Override
     public Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException {
+        return Iterables.getOnlyElement(add(Collections.<Layer<T>>singleton(new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors))));
+    }
+
+    @Override
+    public Iterable<Layer<T>> add(Iterable<Layer<T>> batch) throws IOException {
         final Transaction tx = begin();
         try {
-            final Node node = db.createNode();
+            List<Layer<T>> created = Lists.newLinkedList();
+            for (Layer<T> layer : batch) {
+                final Node node = db.createNode();
 
-            final URI namespace = name.getNamespace();
-            final String localName = name.getLocalName();
-            final String ns = (namespace == null ? "" : namespace.toString());
-            if (!ns.isEmpty()) {
-                node.setProperty(LayerNode.NAME_NS, ns);
-            }
-            node.setProperty(LayerNode.NAME_LN, localName);
-            node.setProperty(LayerNode.TEXT, CharStreams.toString(text));
-            dataNodeMapper.write(data, node);
-
-            final RelationshipIndex index = index();
-
-            for (Anchor anchor : anchors) {
-                final Text anchorText = anchor.getText();
-                if (anchorText instanceof LayerNode) {
-                    final Node anchorTextNode = ((LayerNode) anchorText).node;
-                    final Relationship anchorRel = node.createRelationshipTo(anchorTextNode, ANCHORS);
-
-                    final TextRange anchorRange = anchor.getRange();
-                    final long rangeStart = anchorRange.getStart();
-                    final long rangeEnd = anchorRange.getEnd();
-
-                    anchorRel.setProperty(LayerNode.RANGE_START, rangeStart);
-                    anchorRel.setProperty(LayerNode.RANGE_END, rangeEnd);
-
-                    index.add(anchorRel, "id", ValueContext.numeric(node.getId()));
-                    index.add(anchorRel, "text", ValueContext.numeric(anchorTextNode.getId()));
-                    index.add(anchorRel, "rs", ValueContext.numeric(rangeStart));
-                    index.add(anchorRel, "re", ValueContext.numeric(rangeEnd));
-                    index.add(anchorRel, "len", ValueContext.numeric(anchorRange.length()));
-                    index.add(anchorRel, "ns", ns);
-                    index.add(anchorRel, "ln", localName);
+                final Name name = layer.getName();
+                final URI namespace = name.getNamespace();
+                final String localName = name.getLocalName();
+                final String ns = (namespace == null ? "" : namespace.toString());
+                if (!ns.isEmpty()) {
+                    node.setProperty(LayerNode.NAME_NS, ns);
                 }
-            }
+                node.setProperty(LayerNode.NAME_LN, localName);
+                node.setProperty(LayerNode.TEXT, layer.read());
+                dataNodeMapper.write(layer.data(), node);
 
-            db.getReferenceNode().createRelationshipTo(node, HAS_TEXT);
-            return new LayerNode<T>(this, node);
+                final RelationshipIndex index = index();
+
+                for (Anchor anchor : layer.getAnchors()) {
+                    final Text anchorText = anchor.getText();
+                    if (anchorText instanceof LayerNode) {
+                        final Node anchorTextNode = ((LayerNode) anchorText).node;
+                        final Relationship anchorRel = node.createRelationshipTo(anchorTextNode, ANCHORS);
+
+                        final TextRange anchorRange = anchor.getRange();
+                        final long rangeStart = anchorRange.getStart();
+                        final long rangeEnd = anchorRange.getEnd();
+
+                        anchorRel.setProperty(LayerNode.RANGE_START, rangeStart);
+                        anchorRel.setProperty(LayerNode.RANGE_END, rangeEnd);
+
+                        index.add(anchorRel, "id", ValueContext.numeric(node.getId()));
+                        index.add(anchorRel, "text", ValueContext.numeric(anchorTextNode.getId()));
+                        index.add(anchorRel, "rs", ValueContext.numeric(rangeStart));
+                        index.add(anchorRel, "re", ValueContext.numeric(rangeEnd));
+                        index.add(anchorRel, "len", ValueContext.numeric(anchorRange.length()));
+                        index.add(anchorRel, "ns", ns);
+                        index.add(anchorRel, "ln", localName);
+                    }
+                }
+
+                db.getReferenceNode().createRelationshipTo(node, HAS_TEXT);
+                created.add(new LayerNode<T>(this, node));
+            }
+            return created;
         } finally {
             commit(tx);
         }
