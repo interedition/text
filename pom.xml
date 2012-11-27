@@ -7,7 +7,13 @@
     <groupId>eu.interedition</groupId>
     <artifactId>text</artifactId>
     <version>2.0-SNAPSHOT</version>
-    <name>Standoff-Markup/Annotation Text Model</name>
+    <packaging>pom</packaging>
+    <name>Standoff-Markup/Annotation Text Repository</name>
+
+    <modules>
+        <module>text-core</module>
+        <module>text-server</module>
+    </modules>
 
     <dependencies>
         <dependency>
@@ -22,96 +28,85 @@
             <version>13.0.1</version>
         </dependency>
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>3.0</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.woodstox</groupId>
-            <artifactId>woodstox-core-asl</artifactId>
-            <version>4.1.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.3</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <version>1.3.168</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.neo4j</groupId>
-            <artifactId>neo4j</artifactId>
-            <version>1.8</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-cypher</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-graph-matching</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-graph-algo</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-jmx</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.neo4j</groupId>
-                    <artifactId>neo4j-udc</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>${jersey.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-grizzly2</artifactId>
-            <version>${jersey.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey.contribs</groupId>
-            <artifactId>jersey-multipart</artifactId>
-            <version>${jersey.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.freemarker</groupId>
-            <artifactId>freemarker</artifactId>
-            <version>2.3.19</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.9</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>3.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>woodstox-core-asl</artifactId>
+                <version>4.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>1.9.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>1.3.168</version>
+            </dependency>
+            <dependency>
+                <groupId>org.neo4j</groupId>
+                <artifactId>neo4j</artifactId>
+                <version>1.8</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.neo4j</groupId>
+                        <artifactId>neo4j-cypher</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.neo4j</groupId>
+                        <artifactId>neo4j-graph-matching</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.neo4j</groupId>
+                        <artifactId>neo4j-graph-algo</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.neo4j</groupId>
+                        <artifactId>neo4j-jmx</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.neo4j</groupId>
+                        <artifactId>neo4j-udc</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.jersey</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.jersey</groupId>
+                <artifactId>jersey-grizzly2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.jersey.contribs</groupId>
+                <artifactId>jersey-multipart</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>2.3.19</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>src/main/config</directory>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -141,42 +136,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>appassembler-maven-plugin</artifactId>
-                <version>1.2.2</version>
-                <configuration>
-                    <repositoryLayout>flat</repositoryLayout>
-                    <repositoryName>lib</repositoryName>
-                    <copyConfigurationDirectory>true</copyConfigurationDirectory>
-                    <useAsterikClassPath>true</useAsterikClassPath>
-                    <extraJvmArguments>-Xmx512m</extraJvmArguments>
-                    <programs>
-                        <program>
-                            <mainClass>eu.interedition.text.http.Server</mainClass>
-                            <name>text-server</name>
-                        </program>
-                    </programs>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>app-assemble</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>assemble</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.3</version>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/main/assembly/app.xml</descriptor>
-                    </descriptors>
-                </configuration>
             </plugin>
         </plugins>
     </build>
