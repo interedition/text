@@ -1,5 +1,6 @@
 package eu.interedition.text.http;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
@@ -7,12 +8,16 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
+import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import eu.interedition.text.TextRepository;
+import eu.interedition.text.util.Logging;
 import freemarker.template.Configuration;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,10 +35,16 @@ public class Server extends DefaultResourceConfig {
 
     public Server(Injector injector) {
         this.injector = injector;
+
+        final HashMap<String,Object> config = Maps.newHashMap();
+        config.put(PROPERTY_CONTAINER_REQUEST_FILTERS, Arrays.<Class<?>>asList(GZIPContentEncodingFilter.class));
+        config.put(PROPERTY_CONTAINER_RESPONSE_FILTERS, Arrays.<Class<?>>asList(GZIPContentEncodingFilter.class));
+        setPropertiesAndFeatures(config);
     }
 
 
     public static void main(String... args) throws IOException {
+        Logging.configureLogging();
 
         final Injector injector = Guice.createInjector(new ConfigurationModule(), new AbstractModule() {
             @Override
@@ -44,7 +55,7 @@ public class Server extends DefaultResourceConfig {
             }
         });
 
-        final URI context = UriBuilder.fromUri("http://localhost/")
+        final URI context = UriBuilder.fromUri("http://0.0.0.0/")
                 .port(Integer.parseInt(injector.getInstance(Key.get(String.class, Names.named("interedition.port")))))
                 .path(injector.getInstance(Key.get(String.class, Names.named("interedition.context_path"))))
                 .build();
