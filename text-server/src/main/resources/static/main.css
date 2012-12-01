@@ -9,3 +9,10 @@ body {
     width: 100%;
     text-align: center;
 }
+
+#editor {
+    width: 600px;
+    margin: 1em auto;
+    border: 1px solid #ccc;
+    padding: .5em;
+}
