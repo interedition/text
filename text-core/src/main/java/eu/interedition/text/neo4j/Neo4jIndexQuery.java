@@ -52,6 +52,8 @@ public class Neo4jIndexQuery {
             overlapsQuery.add(NumericRangeQuery.newLongRange("rs", null, range.getEnd(), true, false), BooleanClause.Occur.MUST);
             overlapsQuery.add(NumericRangeQuery.newLongRange("re", range.getStart(), null, false, true), BooleanClause.Occur.MUST);
             return overlapsQuery;
+        } else if (input instanceof Query.LocalNameQuery) {
+            return new TermQuery(new Term("ln", ((Query.LocalNameQuery) input).getLn()));
         } else if (input instanceof Query.NameQuery) {
             final Name name = ((Query.NameQuery) input).getName();
             final URI ns = name.getNamespace();

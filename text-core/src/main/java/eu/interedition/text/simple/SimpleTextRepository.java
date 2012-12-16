@@ -118,6 +118,8 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
                 return new AnyAnchorPredicate<T>(new RangeLengthPredicate(((Query.RangeQuery.RangeLengthQuery) input).getRange().length()));
             } else if (input instanceof Query.RangeQuery.RangeOverlapQuery) {
                 return new AnyAnchorPredicate<T>(new RangeOverlapPredicate(((Query.RangeQuery.RangeOverlapQuery) input).getRange()));
+            } else if (input instanceof Query.LocalNameQuery) {
+                return new LocalNamePredicate<T>(((Query.LocalNameQuery) input).getLn());
             } else if (input instanceof Query.NameQuery) {
                 return new NamePredicate<T>(((Query.NameQuery) input).getName());
             } else if (input instanceof Query.LayerIdentityQuery) {
@@ -158,6 +160,20 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         @Override
         public boolean apply(@Nullable Layer<T> input) {
             return Iterables.any(input.getAnchors(), anchorPredicate);
+        }
+    }
+
+    public static class LocalNamePredicate<T> implements Predicate<Layer<T>> {
+
+        private final String ln;
+
+        public LocalNamePredicate(String ln) {
+            this.ln = ln;
+        }
+
+        @Override
+        public boolean apply(@Nullable Layer<T> input) {
+            return ln.equals(input.getName().getLocalName());
         }
     }
 

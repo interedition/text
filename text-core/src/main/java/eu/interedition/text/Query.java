@@ -57,6 +57,10 @@ public abstract class Query {
         return new NameQuery(name);
     }
 
+    public static Query localName(String ln) {
+        return new LocalNameQuery(ln);
+    }
+
     public static Query text(Text text) {
         return new TextQuery(text);
     }
@@ -163,6 +167,18 @@ public abstract class Query {
 
         public long getId() {
             return id;
+        }
+    }
+
+    public static class LocalNameQuery extends Query {
+        private final String ln;
+
+        LocalNameQuery(String ln) {
+            this.ln = ln;
+        }
+
+        public String getLn() {
+            return ln;
         }
     }
 

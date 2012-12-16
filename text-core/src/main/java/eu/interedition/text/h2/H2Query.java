@@ -181,6 +181,8 @@ public class H2Query<T> {
             return new RangeLengthClause(((Query.RangeQuery.RangeLengthQuery) input).getRange());
         } else if (input instanceof Query.RangeQuery.RangeOverlapQuery) {
             return new RangeOverlapClause(((Query.RangeQuery.RangeOverlapQuery) input).getRange());
+        } else if (input instanceof Query.LocalNameQuery) {
+            return new LocalNameClause(((Query.LocalNameQuery)input).getLn());
         } else if (input instanceof Query.NameQuery) {
             return new NameClause(((Query.NameQuery) input).getName());
         } else if (input instanceof Query.LayerIdentityQuery) {
@@ -262,6 +264,33 @@ public class H2Query<T> {
         }
     }
 
+    protected class LocalNameClause extends Clause {
+
+        final String ln;
+        String relation = "n";
+
+        LocalNameClause(String ln) {
+            this.ln = ln;
+        }
+
+        @Override
+        public int joins(List<String> parts, int joins) {
+            relation += joins;
+            parts.add("LEFT JOIN interedition_name " + relation + " ON " + relation + ".id = l.name_id");
+            return ++joins;
+        }
+
+        @Override
+        public void arguments(List<String> arguments) {
+            arguments.add(ln);
+        }
+
+        @Override
+        public String toString() {
+            return relation + ".ln = ?";
+        }
+    }
+
     protected class NameClause extends Clause {
         final Name name;
         String relation = "n";
@@ -288,7 +317,6 @@ public class H2Query<T> {
 
         @Override
         public String toString() {
-            // FIXME: SQL-escape ns and ln argument
             final StringBuilder builder = new StringBuilder(relation + ".ln = ? AND ");
             final URI ns = name.getNamespace();
             if (ns == null) {

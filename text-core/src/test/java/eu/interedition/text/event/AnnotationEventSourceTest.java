@@ -30,6 +30,7 @@ import eu.interedition.text.simple.KeyValues;
 import java.io.IOException;
 import org.junit.Test;
 
+import static eu.interedition.text.Query.localName;
 import static eu.interedition.text.Query.name;
 import static eu.interedition.text.Query.or;
 import static eu.interedition.text.TextConstants.TEI_NS;
@@ -39,10 +40,10 @@ public class AnnotationEventSourceTest extends AbstractTestResourceTest {
     @Test
     public void generateEvents() throws IOException {
         new QueryResultTextStream<KeyValues>(repository, text("george-algabal-tei.xml"), or(
-                name(new Name(TEI_NS, "div")),
-                name(new Name(TEI_NS, "lg")),
-                name(new Name(TEI_NS, "l")),
-                name(new Name(TEI_NS, "p"))
+                localName("div"),
+                localName("lg"),
+                localName("l"),
+                localName("p")
         )).stream(DEBUG_LISTENER);
     }
 

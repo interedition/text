@@ -47,8 +47,10 @@ public class QueryParser<T> {
             Preconditions.checkArgument(expr.size() > 1, expr.toString());
             return Query.text(repository.findByIdentifier(number(expr.get(1))));
         } else if ("name".equals(functionName)) {
-            Preconditions.checkArgument(expr.size() > 2, expr.toString());
-            return Query.name(new Name(URI.create(string(expr.get(2))), string(expr.get(1))));
+            Preconditions.checkArgument(expr.size() > 1, expr.toString());
+            return expr.size() > 2
+                    ? Query.name(new Name(URI.create(string(expr.get(2))), string(expr.get(1))))
+                    : Query.localName(string(expr.get(1)));
         } else if ("overlaps".equals(functionName)) {
             Preconditions.checkArgument(expr.size() > 2, expr.toString());
             return Query.rangeOverlap(new TextRange(number(expr.get(1)), number(expr.get(2))));
