@@ -12,7 +12,6 @@ import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 import com.sun.jersey.api.core.DefaultResourceConfig;
 import eu.interedition.text.TextRepository;
-import eu.interedition.text.util.Logging;
 import freemarker.template.Configuration;
 import java.io.IOException;
 import java.net.URI;
@@ -44,8 +43,6 @@ public class Server extends DefaultResourceConfig {
 
 
     public static void main(String... args) throws IOException {
-        Logging.configureLogging();
-
         final Injector injector = Guice.createInjector(new ConfigurationModule(), new AbstractModule() {
             @Override
             protected void configure() {
