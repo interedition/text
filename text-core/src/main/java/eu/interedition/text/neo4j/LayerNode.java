@@ -37,8 +37,8 @@ public class LayerNode<T> implements Layer<T> {
         ANCHORS, HAS_TEXT
     }
 
-    final Neo4jTextRepository<T> repository;
-    final Node node;
+    public final Neo4jTextRepository<T> repository;
+    public final Node node;
 
     public LayerNode(Neo4jTextRepository<T> repository, Node node) {
         this.repository = repository;
