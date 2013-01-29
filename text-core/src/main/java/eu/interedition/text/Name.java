@@ -46,6 +46,10 @@ public class Name implements Comparable<Name> {
         this(ns == null ? null : URI.create(ns), localName);
     }
 
+	public Name(String localName) {
+		this((String) null, localName);
+	}
+
     public URI getNamespace() {
         return namespace;
     }
