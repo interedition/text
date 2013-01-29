@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,7 +105,7 @@ public class XMLTransformerResource {
         InputStream xmlBufIn = null;
         try {
             InputStreamReader xmlBufReader = new InputStreamReader(xmlBufIn = xmlBuf.getSupplier().getInput(), CHARSET);
-            final Layer<JsonNode> source = textRepository.add(new Name(TextConstants.XML_NS_URI, "document"), xmlBufReader, null);
+            final Layer<JsonNode> source = textRepository.add(new Name(TextConstants.XML_NS_URI, "document"), xmlBufReader, null, Collections.<Anchor<JsonNode>>emptySet());
             return new XMLTransformer<JsonNode>(createXMLTransformerConfig()).transform(source);
         } finally {
             Closeables.close(xmlBufIn, false);
@@ -115,10 +116,10 @@ public class XMLTransformerResource {
     protected XMLTransformerConfigurationBase<JsonNode> createXMLTransformerConfig() {
         XMLTransformerConfigurationBase<JsonNode> xmlTransformConfig = new XMLTransformerConfigurationBase<JsonNode>(textRepository) {
             @Override
-            protected Layer<JsonNode> translate(Name name, Map<Name, Object> attributes, Set<Anchor<JsonNode>> anchors) {
+            protected Layer<JsonNode> translate(Name name, Map<Name, String> attributes, Set<Anchor<JsonNode>> anchors) {
                 final ObjectNode data = objectMapper.createObjectNode();
-                for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
-                    data.put(attr.getKey().toString(), attr.getValue().toString());
+                for (Map.Entry<Name, String> attr : attributes.entrySet()) {
+                    data.put(attr.getKey().toString(), attr.getValue());
                 }
                 return new SimpleLayer<JsonNode>(name, "", data, anchors);
             }

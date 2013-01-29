@@ -15,7 +15,7 @@ public interface TextRepository<T> {
 
     Layer<T> add(Name name, Reader text, T data, Set<Anchor<T>> anchors) throws IOException;
 
-    Layer<T> add(Name name, Reader text, T data, Anchor<T>... anchors) throws IOException;
+    Layer<T> add(Name name, Reader text, T data, Anchor<T> anchor) throws IOException;
 
     void delete(Iterable<Layer<T>> layers);
 }

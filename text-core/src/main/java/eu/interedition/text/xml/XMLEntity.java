@@ -21,18 +21,14 @@ package eu.interedition.text.xml;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
-import eu.interedition.text.Anchor;
-import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
-import eu.interedition.text.Text;
 import eu.interedition.text.TextConstants;
-import eu.interedition.text.TextRange;
-import eu.interedition.text.simple.SimpleLayer;
+
+import javax.xml.XMLConstants;
+import javax.xml.stream.XMLStreamReader;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import javax.xml.XMLConstants;
-import javax.xml.stream.XMLStreamReader;
 
 import static eu.interedition.text.TextConstants.XML_NS_URI;
 import static javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
@@ -50,14 +46,14 @@ public class XMLEntity {
 
   private final String prefix;
   private final Name name;
-  private final Map<Name, Object> attributes;
+  private final Map<Name, String> attributes;
 
 
   private XMLEntity(Name name, String prefix) {
-    this(name, prefix, new HashMap<Name, Object>());
+    this(name, prefix, new HashMap<Name, String>());
   }
 
-  private XMLEntity(Name name, String prefix, Map<Name, Object> attributes) {
+  private XMLEntity(Name name, String prefix, Map<Name, String> attributes) {
     this.name = name;
     this.prefix = prefix;
     this.attributes = attributes;
@@ -71,7 +67,7 @@ public class XMLEntity {
     return name;
   }
 
-  public Map<Name, Object> getAttributes() {
+  public Map<Name, String> getAttributes() {
     return attributes;
   }
 
@@ -80,7 +76,7 @@ public class XMLEntity {
   }
 
   public static XMLEntity newPI(XMLStreamReader reader) {
-    final Map<Name, Object> attributes = new HashMap<Name, Object>();
+    final Map<Name, String> attributes = new HashMap<Name, String>();
     attributes.put(PI_TARGET_ATTR, reader.getPITarget());
 
     final String data = reader.getPIData();
@@ -94,18 +90,18 @@ public class XMLEntity {
     return new XMLEntity(new Name(reader.getName()), XMLConstants.DEFAULT_NS_PREFIX, attributesToData(reader));
   }
 
-  private static Map<Name, Object> attributesToData(XMLStreamReader reader) {
+  private static Map<Name, String> attributesToData(XMLStreamReader reader) {
     final int attributeCount = reader.getAttributeCount();
-    final Map<Name, Object> attributes = Maps.newHashMapWithExpectedSize(attributeCount);
+    final Map<Name, String> attributes = Maps.newHashMapWithExpectedSize(attributeCount);
     for (int ac = 0; ac < attributeCount; ac++) {
       attributes.put(new Name(reader.getAttributeName(ac)), reader.getAttributeValue(ac));
     }
     return attributesToData(attributes);
   }
 
-  private static Map<Name, Object> attributesToData(Map<Name, Object> attributes) {
-    final Map<Name, Object> data = new HashMap<Name, Object>();
-    for (Map.Entry<Name, Object> attribute : attributes.entrySet()) {
+  private static Map<Name, String> attributesToData(Map<Name, String> attributes) {
+    final Map<Name, String> data = new HashMap<Name, String>();
+    for (Map.Entry<Name, String> attribute : attributes.entrySet()) {
       final URI namespace = attribute.getKey().getNamespace();
       if (namespace != null && XMLNS_ATTRIBUTE_NS_URI.equals(namespace.toString())) {
         continue;

@@ -69,7 +69,7 @@ public abstract class AbstractTextTest extends AbstractTest {
      */
     public Layer<KeyValues> testText() throws IOException {
         if (layer == null) {
-            this.layer = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "test"), new StringReader(getTestText()), null);
+            this.layer = repository.add(new Name(TextConstants.INTEREDITION_NS_URI, "test"), new StringReader(getTestText()), null, Collections.<Anchor<KeyValues>>emptySet());
         }
         return layer;
     }

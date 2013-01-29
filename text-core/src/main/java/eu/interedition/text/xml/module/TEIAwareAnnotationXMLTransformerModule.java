@@ -85,7 +85,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
 
     void handleMilestoneElements(XMLEntity entity, XMLTransformer<T> transformer) {
         final Name entityName = entity.getName();
-        final Map<Name, Object> entityAttributes = entity.getAttributes();
+        final Map<Name, String> entityAttributes = entity.getAttributes();
 
         Name milestoneUnit = null;
         if (MILESTONE_NAME.equals(entityName)) {
@@ -119,7 +119,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
     }
 
     void handleSpanningElements(XMLEntity entity, XMLTransformer<T> transformer) {
-        final Map<Name, Object> entityAttributes = entity.getAttributes();
+        final Map<Name, String> entityAttributes = entity.getAttributes();
         String spanTo = null;
         String refId = null;
         for (Iterator<Name> it = entityAttributes.keySet().iterator(); it.hasNext(); ) {

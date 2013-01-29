@@ -10,22 +10,11 @@ import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Query;
 import eu.interedition.text.QueryResult;
-import eu.interedition.text.Text;
 import eu.interedition.text.TextRange;
 import eu.interedition.text.TextRepository;
 import eu.interedition.text.simple.SimpleLayer;
 import eu.interedition.text.util.BatchLayerAdditionSupport;
 import eu.interedition.text.util.UpdateSupport;
-import java.io.IOException;
-import java.io.Reader;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.neo4j.graphdb.Direction;
@@ -40,6 +29,17 @@ import org.neo4j.index.lucene.QueryContext;
 import org.neo4j.index.lucene.ValueContext;
 import org.neo4j.kernel.Traversal;
 import org.neo4j.kernel.Uniqueness;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static eu.interedition.text.neo4j.LayerNode.Relationships.ANCHORS;
 import static eu.interedition.text.neo4j.LayerNode.Relationships.HAS_TEXT;
@@ -189,8 +189,8 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     }
 
     @Override
-    public Layer<T> add(Name name, Reader text, T data, Anchor<T>... anchors) throws IOException {
-        return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
+    public Layer<T> add(Name name, Reader text, T data, Anchor<T> anchor) throws IOException {
+        return add(name, text, data, Collections.singleton(anchor));
     }
 
     @Override

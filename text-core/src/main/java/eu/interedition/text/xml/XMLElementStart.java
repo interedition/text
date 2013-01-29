@@ -9,10 +9,10 @@ import java.util.Map;
 public class XMLElementStart {
 
     private final Name name;
-    private final Map<Name, Object> attributes;
+    private final Map<Name, String> attributes;
     private final long offset;
 
-    public XMLElementStart(Name name, Map<Name, Object> attributes, long offset) {
+    public XMLElementStart(Name name, Map<Name, String> attributes, long offset) {
         this.name = name;
         this.attributes = attributes;
         this.offset = offset;
@@ -22,7 +22,7 @@ public class XMLElementStart {
         return name;
     }
 
-    public Map<Name, Object> getAttributes() {
+    public Map<Name, String> getAttributes() {
         return attributes;
     }
 

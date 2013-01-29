@@ -62,8 +62,8 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         return added;
     }
 
-    public Layer<T> add(Name name, Reader text, T data, Anchor<T>... anchors) throws IOException {
-        return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
+    public Layer<T> add(Name name, Reader text, T data, Anchor<T> anchor) throws IOException {
+        return add(name, text, data, Collections.singleton(anchor));
     }
 
     @Override

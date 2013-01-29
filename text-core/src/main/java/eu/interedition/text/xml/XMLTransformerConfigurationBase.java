@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -158,10 +159,15 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
         return repository.add(XML_TARGET_NAME, new StringReader(""), null, new Anchor<T>(source, new TextRange(0, source.length())));
     }
 
-    @SuppressWarnings("unchecked")
-    public void xmlElement(Name name, Map<Name, Object> attributes, Anchor<T>... anchors) {
+
+	public void xmlElement(Name name, Map<Name, String> attributes, Anchor<T> anchor) {
+		xmlElement(name, attributes, Collections.singleton(anchor));
+	}
+
+	@SuppressWarnings("unchecked")
+    public void xmlElement(Name name, Map<Name, String> attributes, Iterable<Anchor<T>> anchors) {
         try {
-            final Layer<T> layer = translate(name, attributes, Sets.newHashSet(Arrays.asList(anchors)));
+            final Layer<T> layer = translate(name, attributes, Sets.newHashSet(anchors));
             if (batchSize > 1) {
                 batch.add(layer);
                 if (batch.size() >= batchSize) {
@@ -186,5 +192,5 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
         }
     }
 
-    protected abstract Layer<T> translate(Name name, Map<Name, Object> attributes, Set<Anchor<T>> anchors);
+    protected abstract Layer<T> translate(Name name, Map<Name, String> attributes, Set<Anchor<T>> anchors);
 }

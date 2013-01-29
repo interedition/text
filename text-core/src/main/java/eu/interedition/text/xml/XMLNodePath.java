@@ -71,7 +71,7 @@ public class XMLNodePath extends ArrayDeque<Integer> implements Comparable<XMLNo
         return 0;
     }
 
-    public void set(Map<Name, Object> attributes) {
-        attributes.put(TextConstants.XML_NODE_ATTR_NAME, new XMLNodePath(this));
+    public void set(Map<Name, String> attributes) {
+        attributes.put(TextConstants.XML_NODE_ATTR_NAME, toString());
     }
 }

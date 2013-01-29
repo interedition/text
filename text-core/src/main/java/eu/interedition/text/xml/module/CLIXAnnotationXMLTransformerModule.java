@@ -53,9 +53,9 @@ public class CLIXAnnotationXMLTransformerModule<T> extends XMLTransformerModuleA
     public void start(XMLTransformer<T> transformer, XMLEntity entity) {
         super.start(transformer, entity);
 
-        final Map<Name, Object> entityAttributes = entity.getAttributes();
-        final Object startId = entityAttributes.remove(TextConstants.CLIX_START_ATTR_NAME);
-        final Object endId = entityAttributes.remove(TextConstants.CLIX_END_ATTR_NAME);
+        final Map<Name, String> entityAttributes = entity.getAttributes();
+        final String startId = entityAttributes.remove(TextConstants.CLIX_START_ATTR_NAME);
+        final String endId = entityAttributes.remove(TextConstants.CLIX_END_ATTR_NAME);
         if (startId == null && endId == null) {
             return;
         }

@@ -196,7 +196,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
                         }
                     });
                     transformer.transform(new SAXSource(xmlReader, new InputSource(xmlStream = resource.toURL().openStream())), new StreamResult(xmlContent));
-                    final Layer<KeyValues> xml = repository.add(XML_SOURCE_NAME, new StringReader(xmlContent.toString()), null);
+                    final Layer<KeyValues> xml = repository.add(XML_SOURCE_NAME, new StringReader(xmlContent.toString()), null, Collections.<Anchor<KeyValues>>emptySet());
                     sources.put(resource, xml);
 
                     texts.put(resource, xmlTransformer.transform(xml));
@@ -234,9 +234,9 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         }
 
         @Override
-        protected Layer<KeyValues> translate(Name name, Map<Name, Object> attributes, Set<Anchor<KeyValues>> anchors) {
+        protected Layer<KeyValues> translate(Name name, Map<Name, String> attributes, Set<Anchor<KeyValues>> anchors) {
             final KeyValues kv = new KeyValues();
-            for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
+            for (Map.Entry<Name, String> attr : attributes.entrySet()) {
                 kv.put(attr.getKey().toString(), attr.getValue());
             }
             return new SimpleLayer<KeyValues>(name, "", kv, anchors);
