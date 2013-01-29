@@ -73,7 +73,7 @@ public class XMLSerializer<T> extends TextStream.ExceptionPropagatingListenerAda
                 .compound(Ordering.arbitrary());
     }
 
-    public static <T> void serialize(final ContentHandler xml, TextRepository<T> repository, Text text, final XMLSerializerConfiguration<T> config) throws XMLStreamException, IOException {
+    public static <T> void serialize(final ContentHandler xml, TextRepository<T> repository, Layer<T> text, final XMLSerializerConfiguration<T> config) throws XMLStreamException, IOException {
         try {
             new QueryResultTextStream<T>(repository, text, config.getQuery()).stream(new XMLSerializer<T>(xml, config));
         } catch (Throwable t) {

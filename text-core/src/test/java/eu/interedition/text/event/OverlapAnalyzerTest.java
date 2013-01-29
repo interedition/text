@@ -49,8 +49,8 @@ public class OverlapAnalyzerTest extends AbstractTestResourceTest {
     public void analyzeSelfOverlap() throws IOException {
         final Layer<KeyValues> testText = testText();
         final Name overlap = new Name(TEST_NS, "overlap");
-        repository.add(overlap, new StringReader(""), null, new Anchor(testText, new TextRange(0, TEST_TEXT.length() - 1)));
-        repository.add(overlap, new StringReader(""), null, new Anchor(testText, new TextRange(1, TEST_TEXT.length())));
+        repository.add(overlap, new StringReader(""), null, new Anchor<KeyValues>(testText, new TextRange(0, TEST_TEXT.length() - 1)));
+        repository.add(overlap, new StringReader(""), null, new Anchor<KeyValues>(testText, new TextRange(1, TEST_TEXT.length())));
 
         final OverlapAnalyzer<KeyValues> analyzer = analyze(testText);
         Assert.assertEquals(0, analyzer.getOverlapping().size());

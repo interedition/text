@@ -112,7 +112,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     }
 
     @Override
-    public Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException {
+    public Layer<T> add(Name name, Reader text, T data, Set<Anchor<T>> anchors) throws IOException {
         return Iterables.getOnlyElement(add(Collections.<Layer<T>>singleton(new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors))));
     }
 
@@ -138,8 +138,8 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
                 node.setProperty(LayerNode.TEXT, layer.read());
                 dataNodeMapper.write(layer.data(), node);
 
-                for (Anchor anchor : layer.getAnchors()) {
-                    final Text anchorText = anchor.getText();
+                for (Anchor<T> anchor : layer.getAnchors()) {
+                    final Layer<T> anchorText = anchor.getText();
                     if (anchorText instanceof LayerNode) {
                         final Node anchorTextNode = ((LayerNode) anchorText).node;
                         final Relationship anchorRel = node.createRelationshipTo(anchorTextNode, ANCHORS);
@@ -189,7 +189,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
     }
 
     @Override
-    public Layer<T> add(Name name, Reader text, T data, Anchor... anchors) throws IOException {
+    public Layer<T> add(Name name, Reader text, T data, Anchor<T>... anchors) throws IOException {
         return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 

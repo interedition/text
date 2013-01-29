@@ -51,10 +51,10 @@ public class LayerNode<T> implements Layer<T> {
     }
 
     @Override
-    public Set<Anchor> getAnchors() {
-        final Set<Anchor> anchors = Sets.newHashSet();
+    public Set<Anchor<T>> getAnchors() {
+        final Set<Anchor<T>> anchors = Sets.newHashSet();
         for (Relationship anchorRel : node.getRelationships(Direction.OUTGOING, Relationships.ANCHORS)) {
-            anchors.add(new Anchor(
+            anchors.add(new Anchor<T>(
                     new LayerNode<T>(repository, anchorRel.getEndNode()),
                     new TextRange(
                             (Long) anchorRel.getProperty(RANGE_START),

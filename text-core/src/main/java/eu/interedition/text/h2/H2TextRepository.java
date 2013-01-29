@@ -179,10 +179,10 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
 
                 insertLayer.addBatch();
 
-                final Set<Anchor> anchors = layer.getAnchors();
-                final Set<Anchor> mappedAnchors = Sets.newHashSet();
-                for (Anchor anchor : anchors) {
-                    final Text anchorText = anchor.getText();
+                final Set<Anchor<T>> anchors = layer.getAnchors();
+                final Set<Anchor<T>> mappedAnchors = Sets.newHashSet();
+                for (Anchor<T> anchor : anchors) {
+                    final Layer<T> anchorText = anchor.getText();
                     if (anchorText instanceof LayerRelation) {
                         if (insertAnchor == null) {
                             insertAnchor = connection.prepareStatement("insert into interedition_text_anchor (id, from_id, to_id, range_start, range_end) values (?, ?, ?, ?, ?)");
@@ -191,11 +191,11 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
                         final TextRange anchorRange = anchor.getRange();
                         insertAnchor.setLong(1, anchorId);
                         insertAnchor.setLong(2, id);
-                        insertAnchor.setLong(3, ((LayerRelation<?>) anchorText).getId());
+                        insertAnchor.setLong(3, anchorText.getId());
                         insertAnchor.setLong(4, anchorRange.getStart());
                         insertAnchor.setLong(5, anchorRange.getEnd());
                         insertAnchor.addBatch();
-                        mappedAnchors.add(new AnchorRelation(anchorText, anchorRange, anchorId));
+                        mappedAnchors.add(new AnchorRelation<T>(anchorText, anchorRange, anchorId));
                     }
                 }
 
@@ -223,10 +223,10 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
     }
 
     @Override
-    public Layer<T> add(final Name name, final Reader text, final T data, final Set<Anchor> anchors) throws IOException {
+    public Layer<T> add(final Name name, final Reader text, final T data, final Set<Anchor<T>> anchors) throws IOException {
         return Iterables.getOnlyElement(add(Collections.<Layer<T>>singleton(new Layer<T>() {
             @Override
-            public Set<Anchor> getAnchors() {
+            public Set<Anchor<T>> getAnchors() {
                 return anchors;
             }
 
@@ -319,7 +319,7 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
     }
 
     @Override
-    public Layer<T> add(Name name, Reader text, T data, Anchor... anchors) throws IOException {
+    public Layer<T> add(Name name, Reader text, T data, Anchor<T>... anchors) throws IOException {
         return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 

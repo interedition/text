@@ -79,9 +79,9 @@ public class H2Query<T> {
                         PreparedStatement queryStmt;
                         ResultSet resultSet;
 
-                        Set<Anchor> anchors = null;
+                        Set<Anchor<T>> anchors = null;
                         LayerRelation<T> layer = null;
-                        AnchorRelation anchor = null;
+                        AnchorRelation<T> anchor = null;
 
                         @Override
                         protected Layer<T> computeNext() {
@@ -120,9 +120,9 @@ public class H2Query<T> {
                                     if (anchorId != 0 && (anchor == null || anchor.getId() != anchorId)) {
                                         final long anchorNameId = resultSet.getLong(8);
                                         final NameRelation targetName = repository.cachedName(anchorNameId, new NameRelation(resultSet.getString(6), resultSet.getString(7), anchorNameId));
-                                        final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor>emptySet(), null, resultSet.getLong(9), repository);
+                                        final LayerRelation<T> target = new LayerRelation<T>(targetName, Collections.<Anchor<T>>emptySet(), null, resultSet.getLong(9), repository);
                                         final TextRange targetRange = new TextRange(resultSet.getLong(11), resultSet.getLong(12));
-                                        anchors.add(anchor = new AnchorRelation(target, targetRange, anchorId));
+                                        anchors.add(anchor = new AnchorRelation<T>(target, targetRange, anchorId));
                                     }
 
                                     if (result != null) {

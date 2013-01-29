@@ -65,7 +65,7 @@ public class XMLParserTest extends AbstractTestResourceTest {
 
     @Test
     public void textContents() throws Exception {
-        final Layer text = text("george-algabal-tei.xml");
+        final Layer<KeyValues> text = text("george-algabal-tei.xml");
 
         assertTrue(text.toString(), text.length() > 0);
 

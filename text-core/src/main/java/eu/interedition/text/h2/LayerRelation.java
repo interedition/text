@@ -33,12 +33,12 @@ import java.util.SortedSet;
 public class LayerRelation<T> implements Layer<T> {
 
     private final Name name;
-    private final Set<Anchor> anchors;
+    private final Set<Anchor<T>> anchors;
     private final T data;
     private final long id;
     private final H2TextRepository<T> repository;
 
-    public LayerRelation(Name name, Set<Anchor> anchors, T data, long id, H2TextRepository<T> repository) {
+    public LayerRelation(Name name, Set<Anchor<T>> anchors, T data, long id, H2TextRepository<T> repository) {
         this.name = name;
         this.anchors = anchors;
         this.data = data;
@@ -57,7 +57,7 @@ public class LayerRelation<T> implements Layer<T> {
     }
 
     @Override
-    public Set<Anchor> getAnchors() {
+    public Set<Anchor<T>> getAnchors() {
         return anchors;
     }
 

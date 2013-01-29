@@ -234,7 +234,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
         }
 
         @Override
-        protected Layer<KeyValues> translate(Name name, Map<Name, Object> attributes, Set<Anchor> anchors) {
+        protected Layer<KeyValues> translate(Name name, Map<Name, Object> attributes, Set<Anchor<KeyValues>> anchors) {
             final KeyValues kv = new KeyValues();
             for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
                 kv.put(attr.getKey().toString(), attr.getValue());

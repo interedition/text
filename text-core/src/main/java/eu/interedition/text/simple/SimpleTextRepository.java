@@ -53,7 +53,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         return added;
     }
 
-    public Layer<T> add(Name name, Reader text, T data, Set<Anchor> anchors) throws IOException {
+    public Layer<T> add(Name name, Reader text, T data, Set<Anchor<T>> anchors) throws IOException {
         final SimpleLayer<T> added = new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors);
         for (Anchor anchor : anchors) {
             this.targets.put(anchor.getText(), added);
@@ -62,7 +62,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         return added;
     }
 
-    public Layer<T> add(Name name, Reader text, T data, Anchor... anchors) throws IOException {
+    public Layer<T> add(Name name, Reader text, T data, Anchor<T>... anchors) throws IOException {
         return add(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 
@@ -113,11 +113,11 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
             } else if (input instanceof Query.OperatorQuery.Or) {
                 return Predicates.or(Iterables.transform(((Query.OperatorQuery) input).getOperands(), this));
             } else if (input instanceof Query.RangeQuery.RangeEnclosesQuery) {
-                return new AnyAnchorPredicate<T>(new RangeEnclosesPredicate(((Query.RangeQuery.RangeEnclosesQuery) input).getRange()));
+                return new AnyAnchorPredicate(new RangeEnclosesPredicate(((Query.RangeQuery.RangeEnclosesQuery) input).getRange()));
             } else if (input instanceof Query.RangeQuery.RangeLengthQuery) {
-                return new AnyAnchorPredicate<T>(new RangeLengthPredicate(((Query.RangeQuery.RangeLengthQuery) input).getRange().length()));
+                return new AnyAnchorPredicate(new RangeLengthPredicate(((Query.RangeQuery.RangeLengthQuery) input).getRange().length()));
             } else if (input instanceof Query.RangeQuery.RangeOverlapQuery) {
-                return new AnyAnchorPredicate<T>(new RangeOverlapPredicate(((Query.RangeQuery.RangeOverlapQuery) input).getRange()));
+                return new AnyAnchorPredicate(new RangeOverlapPredicate(((Query.RangeQuery.RangeOverlapQuery) input).getRange()));
             } else if (input instanceof Query.LocalNameQuery) {
                 return new LocalNamePredicate<T>(((Query.LocalNameQuery) input).getLn());
             } else if (input instanceof Query.NameQuery) {
@@ -151,9 +151,9 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
 
     public static class AnyAnchorPredicate<T> implements Predicate<Layer<T>> {
 
-        private Predicate<Anchor> anchorPredicate;
+        private Predicate<Anchor<?>> anchorPredicate;
 
-        public AnyAnchorPredicate(Predicate<Anchor> anchorPredicate) {
+        public AnyAnchorPredicate(Predicate<Anchor<?>> anchorPredicate) {
             this.anchorPredicate = anchorPredicate;
         }
 
@@ -192,21 +192,21 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
     }
 
 
-    public static class TextPredicate implements Predicate<Anchor> {
+    public static class TextPredicate<T> implements Predicate<Anchor<T>> {
 
-        private final Text target;
+        private final Layer<T> target;
 
-        public TextPredicate(Text target) {
+        public TextPredicate(Layer<T> target) {
             this.target = target;
         }
 
         @Override
-        public boolean apply(@Nullable Anchor input) {
+        public boolean apply(@Nullable Anchor<T> input) {
             return input.getText().equals(target);
         }
     }
 
-    public static class RangeEnclosesPredicate implements Predicate<Anchor> {
+    public static class RangeEnclosesPredicate implements Predicate<Anchor<?>> {
 
         private final TextRange range;
 
@@ -215,12 +215,12 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         }
 
         @Override
-        public boolean apply(@Nullable Anchor input) {
+        public boolean apply(@Nullable Anchor<?> input) {
             return range.encloses(input.getRange());
         }
     }
 
-    public static class RangeLengthPredicate implements Predicate<Anchor> {
+    public static class RangeLengthPredicate implements Predicate<Anchor<?>> {
 
         private final long length;
 
@@ -229,12 +229,12 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         }
 
         @Override
-        public boolean apply(@Nullable Anchor input) {
+        public boolean apply(@Nullable Anchor<?> input) {
             return (input.getRange().length() == length);
         }
     }
 
-    public static class RangeOverlapPredicate implements Predicate<Anchor> {
+    public static class RangeOverlapPredicate implements Predicate<Anchor<?>> {
 
         private final TextRange range;
 
@@ -243,7 +243,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
         }
 
         @Override
-        public boolean apply(@Nullable Anchor input) {
+        public boolean apply(@Nullable Anchor<?> input) {
             return range.hasOverlapWith(input.getRange());
         }
     }

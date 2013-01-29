@@ -25,22 +25,22 @@ import static eu.interedition.text.Query.text;
 public class QueryResultTextStream<T> implements TextStream<T> {
 
     private final TextRepository<T> repository;
-    private final Text text;
+    private final Layer<T> text;
     private final Query query;
     private final long pageSize;
 
-    private QueryResultTextStream(TextRepository<T> repository, Text text, Query query, long pageSize) {
+    private QueryResultTextStream(TextRepository<T> repository, Layer<T> text, Query query, long pageSize) {
         this.repository = repository;
         this.text = text;
         this.query = query;
         this.pageSize = pageSize;
     }
 
-    public QueryResultTextStream(TextRepository<T> repository, Text text, Query query) {
+    public QueryResultTextStream(TextRepository<T> repository, Layer<T> text, Query query) {
         this(repository, text, query, Long.MAX_VALUE);
     }
 
-    public QueryResultTextStream(TextRepository<T> repository, Text text) {
+    public QueryResultTextStream(TextRepository<T> repository, Layer<T> text) {
         this(repository, text, any());
     }
 
@@ -67,7 +67,7 @@ public class QueryResultTextStream<T> implements TextStream<T> {
                         final QueryResult<T> page = repository.query(and(query, text(text), rangeOverlap(pageRange)));
                         try {
                             for (Layer<T> a : page) {
-                                for (Anchor anchor : a.getAnchors()) {
+                                for (Anchor<T> anchor : a.getAnchors()) {
                                     if (!text.equals(anchor.getText())) {
                                         continue;
                                     }
@@ -135,10 +135,10 @@ public class QueryResultTextStream<T> implements TextStream<T> {
     }
 
 
-    private Predicate<Layer<T>> emptyIn(final Text text) {
-        return new SimpleTextRepository.AnyAnchorPredicate<T>(new Predicate<Anchor>() {
+    private Predicate<Layer<T>> emptyIn(final Layer<T> text) {
+        return new SimpleTextRepository.AnyAnchorPredicate<T>(new Predicate<Anchor<?>>() {
             @Override
-            public boolean apply(@Nullable Anchor input) {
+            public boolean apply(@Nullable Anchor<?> input) {
                 return input.getRange().length() == 0 && text.equals(input.getText());
             }
         });

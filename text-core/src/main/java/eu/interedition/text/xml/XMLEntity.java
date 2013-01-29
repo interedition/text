@@ -22,6 +22,7 @@ package eu.interedition.text.xml;
 import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import eu.interedition.text.Anchor;
+import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
 import eu.interedition.text.Text;
 import eu.interedition.text.TextConstants;
@@ -112,10 +113,6 @@ public class XMLEntity {
       data.put(attribute.getKey(), attribute.getValue());
     }
     return data;
-  }
-
-  public SimpleLayer<Map<Name, Object>> toAnnotation(Text text, long offset) {
-    return new SimpleLayer<Map<Name, Object>>(name, "", attributes, new Anchor(text, new TextRange(offset, offset)));
   }
 
   @Override

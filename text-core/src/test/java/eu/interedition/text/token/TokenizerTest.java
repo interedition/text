@@ -94,7 +94,7 @@ public class TokenizerTest extends AbstractTestResourceTest {
             @Override
             public void token(Tokenizer<KeyValues> tokenizer, TextRange range) {
                 try {
-                    repository.add(SENTENCE_NAME, new StringReader(""), null, new Anchor(layer, range));
+                    repository.add(SENTENCE_NAME, new StringReader(""), null, new Anchor<KeyValues>(layer, range));
                 } catch (IOException e) {
                     throw Throwables.propagate(e);
                 }

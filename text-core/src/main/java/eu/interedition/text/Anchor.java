@@ -24,17 +24,17 @@ import com.google.common.base.Objects;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage of Gregor Middell">Gregor Middell</a>
  */
-public class Anchor {
+public class Anchor<T> {
 
-    private final Text text;
+    private final Layer<T> text;
     private final TextRange range;
 
-    public Anchor(Text text, TextRange range) {
+    public Anchor(Layer<T> text, TextRange range) {
         this.text = text;
         this.range = range;
     }
 
-    public Text getText() {
+    public Layer<T> getText() {
         return text;
     }
 

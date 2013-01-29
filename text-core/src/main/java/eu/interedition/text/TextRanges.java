@@ -50,9 +50,9 @@ public class TextRanges {
         return Ordering.from(new Comparator<Layer<?>>() {
             @Override
             public int compare(Layer<?> o1, Layer<?> o2) {
-                for (Anchor o1Anchor : o1.getAnchors()) {
+                for (Anchor<?> o1Anchor : o1.getAnchors()) {
                     if (o1Anchor.getText().equals(target)) {
-                        for (Anchor o2Anchor : o2.getAnchors()) {
+                        for (Anchor<?> o2Anchor : o2.getAnchors()) {
                             if (o2Anchor.getText().equals(target)) {
                                 return o1Anchor.getRange().compareTo(o2Anchor.getRange());
                             }

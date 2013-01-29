@@ -42,7 +42,7 @@ public class AnnotationTest extends AbstractTestResourceTest {
 
     @Test
     public void deleteAll() throws IOException {
-        final Layer existing = text();
+        final Layer<KeyValues> existing = text();
         try {
             final QueryResult<KeyValues> layers = repository.query(and(Query.text(existing), rangeEncloses(new TextRange(0, existing.length()))));
             try {

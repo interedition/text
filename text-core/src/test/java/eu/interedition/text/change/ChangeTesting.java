@@ -89,7 +89,7 @@ public class ChangeTesting extends AbstractTestResourceTest {
 
             changeSets.add(0, new ChangeSet(""));
 
-            final Layer testLayer = text(testFile.toURI());
+            final Layer<KeyValues> testLayer = text(testFile.toURI());
 
             final Multimap<String, ChangeAdapter> changes = HashMultimap.create();
             new QueryResultTextStream<KeyValues>(repository, testLayer, Query.or(
@@ -168,7 +168,7 @@ public class ChangeTesting extends AbstractTestResourceTest {
                                 for (ChangeAdapter changeAdapter : versions.get(version)) {
                                     final Name changeName = changeAdapter.getAnnotation().getName();
                                     if (toRemove.equals(changeName.getLocalName())) {
-                                        for (Anchor anchor : changeAdapter.getAnnotation().getAnchors()) {
+                                        for (Anchor<KeyValues> anchor : changeAdapter.getAnnotation().getAnchors()) {
                                             rangesToRemove.add(anchor.getRange());
                                         }
                                     }

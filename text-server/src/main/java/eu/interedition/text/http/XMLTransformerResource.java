@@ -115,7 +115,7 @@ public class XMLTransformerResource {
     protected XMLTransformerConfigurationBase<JsonNode> createXMLTransformerConfig() {
         XMLTransformerConfigurationBase<JsonNode> xmlTransformConfig = new XMLTransformerConfigurationBase<JsonNode>(textRepository) {
             @Override
-            protected Layer<JsonNode> translate(Name name, Map<Name, Object> attributes, Set<Anchor> anchors) {
+            protected Layer<JsonNode> translate(Name name, Map<Name, Object> attributes, Set<Anchor<JsonNode>> anchors) {
                 final ObjectNode data = objectMapper.createObjectNode();
                 for (Map.Entry<Name, Object> attr : attributes.entrySet()) {
                     data.put(attr.getKey().toString(), attr.getValue().toString());

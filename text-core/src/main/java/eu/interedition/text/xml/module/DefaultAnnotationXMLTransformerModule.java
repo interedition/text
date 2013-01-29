@@ -55,7 +55,7 @@ public class DefaultAnnotationXMLTransformerModule<T> extends XMLTransformerModu
   public void end(XMLTransformer<T> transformer, XMLEntity entity) {
     if (transformer.getInclusionContext().peek()) {
         final TextRange range = new TextRange(startOffsetStack.pop(), transformer.getTextOffset());
-        final Anchor anchor = new Anchor(transformer.getTarget(), range);
+        final Anchor<T> anchor = new Anchor<T>(transformer.getTarget(), range);
         transformer.getConfiguration().xmlElement(entity.getName(), entity.getAttributes(), anchor);
     }
     super.end(transformer, entity);

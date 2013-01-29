@@ -51,7 +51,7 @@ public interface XMLTransformerConfiguration<T> {
 
     Layer<T> start(Layer<T> source) throws IOException;
 
-    void xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors);
+    void xmlElement(Name name, Map<Name, Object> attributes, Anchor<T>... anchors);
 
     void end(Layer<T> target, Reader text) throws IOException;
 }

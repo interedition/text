@@ -26,11 +26,11 @@ public class SimpleLayer<T> implements Layer<T> {
 
     private final Name name;
     String text;
-    private final Set<Anchor> anchors;
+    private final Set<Anchor<T>> anchors;
     private final T data;
     private final long id;
 
-    public SimpleLayer(Name name, String text, T data, Set<Anchor> anchors) {
+    public SimpleLayer(Name name, String text, T data, Set<Anchor<T>> anchors) {
         this.name = name;
         this.text = text;
         this.data = data;
@@ -38,7 +38,7 @@ public class SimpleLayer<T> implements Layer<T> {
         this.id = ID_SOURCE.addAndGet(1);
     }
 
-    public SimpleLayer(Name name, String text, T data, Anchor... anchors) {
+    public SimpleLayer(Name name, String text, T data, Anchor<T>... anchors) {
         this(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 
@@ -48,7 +48,7 @@ public class SimpleLayer<T> implements Layer<T> {
     }
 
     @Override
-    public Set<Anchor> getAnchors() {
+    public Set<Anchor<T>> getAnchors() {
         return anchors;
     }
 

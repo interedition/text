@@ -58,7 +58,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
 
     @Test
     public void clixSerialize() throws Exception {
-        final Layer testLayer = text("wp-orpheus1-clix.xml");
+        final Layer<KeyValues> testLayer = text("wp-orpheus1-clix.xml");
 
         final QueryResult<KeyValues> emptyRanges = repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0)));
         try {
@@ -90,7 +90,7 @@ public class XMLSerializerTest extends AbstractTestResourceTest {
 
     @Test
     public void teiConversion() throws Exception {
-        final Layer testLayer = text("george-algabal-tei.xml");
+        final Layer<KeyValues> testLayer = text("george-algabal-tei.xml");
         final QueryResult<KeyValues> emptyRanges = repository.query(Query.and(Query.text(testLayer), Query.rangeLength(0)));
         try {
             repository.delete(emptyRanges);

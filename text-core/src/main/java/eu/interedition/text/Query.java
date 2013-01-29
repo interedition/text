@@ -61,8 +61,8 @@ public abstract class Query {
         return new LocalNameQuery(ln);
     }
 
-    public static Query text(Text text) {
-        return new TextQuery(text);
+    public static <T> Query text(Layer<T> text) {
+        return new TextQuery<T>(text);
     }
 
     public static Query rangeOverlap(TextRange range) {
@@ -194,14 +194,14 @@ public abstract class Query {
         }
     }
 
-    public static class TextQuery extends Query {
-        private final Text text;
+    public static class TextQuery<T> extends Query {
+        private final Layer<T> text;
 
-        TextQuery(Text text) {
+        TextQuery(Layer<T> text) {
             this.text = text;
         }
 
-        public Text getText() {
+        public Layer<T> getText() {
             return text;
         }
     }

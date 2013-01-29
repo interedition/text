@@ -67,7 +67,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
 
             final TextRange range = new TextRange(last.getOffset(), textOffset);
             final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-            configuration.xmlElement(last.getName(), last.getAttributes(), new Anchor(transformer.getTarget(), range));
+            configuration.xmlElement(last.getName(), last.getAttributes(), new Anchor<T>(transformer.getTarget(), range));
         }
 
         this.milestones = null;
@@ -111,7 +111,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
         if (last != null) {
             final TextRange range = new TextRange(last.getOffset(), textOffset);
             final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-            configuration.xmlElement(last.getName(), last.getAttributes(), new Anchor(transformer.getTarget(), range));
+            configuration.xmlElement(last.getName(), last.getAttributes(), new Anchor<T>(transformer.getTarget(), range));
 
         }
 
@@ -150,7 +150,7 @@ public class TEIAwareAnnotationXMLTransformerModule<T> extends XMLTransformerMod
                 final TextRange range = new TextRange(a.getOffset(), textOffset);
 
                 final XMLTransformerConfiguration<T> configuration = transformer.getConfiguration();
-                configuration.xmlElement(a.getName(), a.getAttributes(), new Anchor(transformer.getTarget(), range));
+                configuration.xmlElement(a.getName(), a.getAttributes(), new Anchor<T>(transformer.getTarget(), range));
             }
         }
     }

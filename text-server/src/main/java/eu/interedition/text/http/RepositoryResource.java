@@ -70,13 +70,13 @@ public class RepositoryResource {
 
         final Name name = objectMapper.readValue(nameNode, Name.class);
         final StringReader textReader = new StringReader(textNode == null ? "" : textNode.asText());
-        final Set<Anchor> anchors = Sets.newHashSet();
+        final Set<Anchor<JsonNode>> anchors = Sets.newHashSet();
         for (JsonNode anchorNode : Objects.firstNonNull(anchorsNode, Collections.<JsonNode>emptySet())) {
             Preconditions.checkArgument(anchorNode.isArray() && anchorNode.size() > 2, anchorNode.toString());
-            final Text text = Preconditions.checkNotNull(repository.findByIdentifier(anchorNode.get(0).asLong()), anchorNode.get(0).toString());
+            final Layer<JsonNode> text = Preconditions.checkNotNull(repository.findByIdentifier(anchorNode.get(0).asLong()), anchorNode.get(0).toString());
             final long rangeStart = anchorNode.get(1).asLong();
             final long rangeEnd = anchorNode.get(2).asLong();
-            anchors.add(new Anchor(text, new TextRange(rangeStart, rangeEnd)));
+            anchors.add(new Anchor<JsonNode>(text, new TextRange(rangeStart, rangeEnd)));
         }
 
         final Layer<JsonNode> created = repository.add(name, textReader, data, anchors);

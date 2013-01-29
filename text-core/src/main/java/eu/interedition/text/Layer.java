@@ -29,7 +29,7 @@ public interface Layer<T> extends Named, Text {
 
     long getId();
 
-    Set<Anchor> getAnchors();
+    Set<Anchor<T>> getAnchors();
 
     T data();
 }

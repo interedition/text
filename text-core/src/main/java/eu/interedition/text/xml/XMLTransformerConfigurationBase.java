@@ -154,12 +154,12 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
     }
 
     @Override
-    public Layer<T> start(Layer source) throws IOException {
-        return repository.add(XML_TARGET_NAME, new StringReader(""), null, new Anchor(source, new TextRange(0, source.length())));
+    public Layer<T> start(Layer<T> source) throws IOException {
+        return repository.add(XML_TARGET_NAME, new StringReader(""), null, new Anchor<T>(source, new TextRange(0, source.length())));
     }
 
     @SuppressWarnings("unchecked")
-    public void xmlElement(Name name, Map<Name, Object> attributes, Anchor... anchors) {
+    public void xmlElement(Name name, Map<Name, Object> attributes, Anchor<T>... anchors) {
         try {
             final Layer<T> layer = translate(name, attributes, Sets.newHashSet(Arrays.asList(anchors)));
             if (batchSize > 1) {
@@ -186,5 +186,5 @@ public abstract class XMLTransformerConfigurationBase<T> implements XMLTransform
         }
     }
 
-    protected abstract Layer<T> translate(Name name, Map<Name, Object> attributes, Set<Anchor> anchors);
+    protected abstract Layer<T> translate(Name name, Map<Name, Object> attributes, Set<Anchor<T>> anchors);
 }
