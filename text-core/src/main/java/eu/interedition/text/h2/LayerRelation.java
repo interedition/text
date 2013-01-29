@@ -5,11 +5,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
+import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextRange;
 import java.io.FilterReader;
 import java.io.IOException;
@@ -51,7 +54,7 @@ public class LayerRelation<T> implements Layer<T> {
         return id;
     }
 
-    @Override
+	@Override
     public Name getName() {
         return name;
     }
@@ -61,7 +64,19 @@ public class LayerRelation<T> implements Layer<T> {
         return anchors;
     }
 
-    @Override
+	@Override
+	public Set<Layer<T>> getPorts() throws IOException {
+		final QueryResult<T> qr = repository.query(Query.text(this));
+		try {
+			final Set<Layer<T>> ports = Sets.newHashSet();
+			Iterables.addAll(ports, qr);
+			return ports;
+		} finally {
+			Closeables.closeQuietly(qr);
+		}
+	}
+
+	@Override
     public void read(Writer target) throws IOException {
         read(null, target);
     }

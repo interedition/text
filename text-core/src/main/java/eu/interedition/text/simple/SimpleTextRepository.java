@@ -54,7 +54,7 @@ public class SimpleTextRepository<T> implements TextRepository<T>, UpdateSupport
     }
 
     public Layer<T> add(Name name, Reader text, T data, Set<Anchor<T>> anchors) throws IOException {
-        final SimpleLayer<T> added = new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors);
+        final SimpleLayer<T> added = new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors, this);
         for (Anchor anchor : anchors) {
             this.targets.put(anchor.getText(), added);
         }

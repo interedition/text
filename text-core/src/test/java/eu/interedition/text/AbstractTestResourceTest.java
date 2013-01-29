@@ -239,7 +239,7 @@ public abstract class AbstractTestResourceTest extends AbstractTextTest {
             for (Map.Entry<Name, String> attr : attributes.entrySet()) {
                 kv.put(attr.getKey().toString(), attr.getValue());
             }
-            return new SimpleLayer<KeyValues>(name, "", kv, anchors);
+            return new SimpleLayer<KeyValues>(name, "", kv, anchors, null);
         }
     }
 

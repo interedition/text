@@ -19,6 +19,7 @@
  */
 package eu.interedition.text;
 
+import java.io.IOException;
 import java.util.Set;
 
 /**
@@ -28,6 +29,8 @@ import java.util.Set;
 public interface Layer<T> extends Named, Text {
 
     long getId();
+
+	Set<Layer<T>> getPorts() throws IOException;
 
     Set<Anchor<T>> getAnchors();
 

@@ -50,7 +50,16 @@ public class LayerNode<T> implements Layer<T> {
         return node.getId();
     }
 
-    @Override
+	@Override
+	public Set<Layer<T>> getPorts() throws IOException {
+		final Set<Layer<T>> ports = Sets.newHashSet();
+		for (Relationship rel : node.getRelationships(Direction.INCOMING, Relationships.ANCHORS)) {
+			ports.add(new LayerNode<T>(repository, rel.getStartNode()));
+		}
+		return ports;
+	}
+
+	@Override
     public Set<Anchor<T>> getAnchors() {
         final Set<Anchor<T>> anchors = Sets.newHashSet();
         for (Relationship anchorRel : node.getRelationships(Direction.OUTGOING, Relationships.ANCHORS)) {

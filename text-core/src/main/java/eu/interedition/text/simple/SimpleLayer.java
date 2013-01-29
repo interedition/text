@@ -4,9 +4,12 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Closeables;
 import eu.interedition.text.Anchor;
 import eu.interedition.text.Layer;
 import eu.interedition.text.Name;
+import eu.interedition.text.Query;
+import eu.interedition.text.QueryResult;
 import eu.interedition.text.TextRange;
 import java.io.IOException;
 import java.io.StringReader;
@@ -28,18 +31,16 @@ public class SimpleLayer<T> implements Layer<T> {
     String text;
     private final Set<Anchor<T>> anchors;
     private final T data;
-    private final long id;
+	private final SimpleTextRepository<T> textRepository;
+	private final long id;
 
-    public SimpleLayer(Name name, String text, T data, Set<Anchor<T>> anchors) {
+    public SimpleLayer(Name name, String text, T data, Set<Anchor<T>> anchors, SimpleTextRepository<T> textRepository) {
         this.name = name;
         this.text = text;
         this.data = data;
-        this.anchors = Collections.unmodifiableSet(anchors);
+		this.textRepository = textRepository;
+		this.anchors = Collections.unmodifiableSet(anchors);
         this.id = ID_SOURCE.addAndGet(1);
-    }
-
-    public SimpleLayer(Name name, String text, T data, Anchor<T>... anchors) {
-        this(name, text, data, Sets.newHashSet(Arrays.asList(anchors)));
     }
 
     @Override
@@ -62,7 +63,19 @@ public class SimpleLayer<T> implements Layer<T> {
         return id;
     }
 
-    @Override
+	@Override
+	public Set<Layer<T>> getPorts() {
+		final QueryResult<T> qr = textRepository.query(Query.text(this));
+		try {
+			final Set<Layer<T>> ports = Sets.newHashSet();
+			Iterables.addAll(ports, qr);
+			return ports;
+		} finally {
+			Closeables.closeQuietly(qr);
+		}
+	}
+
+	@Override
     public void read(Writer target) throws IOException {
         read(null, target);
     }

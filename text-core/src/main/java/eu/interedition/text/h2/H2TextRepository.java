@@ -230,12 +230,17 @@ public class H2TextRepository<T> implements TextRepository<T>, UpdateSupport<T>,
                 return anchors;
             }
 
-            @Override
+			@Override
+			public Set<Layer<T>> getPorts() throws IOException {
+				return Collections.emptySet();
+			}
+
+			@Override
             public long getId() {
                 throw new UnsupportedOperationException();
             }
 
-            @Override
+			@Override
             public T data() {
                 return data;
             }

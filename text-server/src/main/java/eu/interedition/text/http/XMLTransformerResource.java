@@ -121,7 +121,7 @@ public class XMLTransformerResource {
                 for (Map.Entry<Name, String> attr : attributes.entrySet()) {
                     data.put(attr.getKey().toString(), attr.getValue());
                 }
-                return new SimpleLayer<JsonNode>(name, "", data, anchors);
+                return new SimpleLayer<JsonNode>(name, "", data, anchors, null);
             }
         }.withBatchSize(1024);
 

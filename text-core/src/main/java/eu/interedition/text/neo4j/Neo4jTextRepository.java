@@ -33,7 +33,6 @@ import org.neo4j.kernel.Uniqueness;
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -113,7 +112,7 @@ public class Neo4jTextRepository<T> implements TextRepository<T>, UpdateSupport<
 
     @Override
     public Layer<T> add(Name name, Reader text, T data, Set<Anchor<T>> anchors) throws IOException {
-        return Iterables.getOnlyElement(add(Collections.<Layer<T>>singleton(new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors))));
+        return Iterables.getOnlyElement(add(Collections.<Layer<T>>singleton(new SimpleLayer<T>(name, CharStreams.toString(text), data, anchors, null))));
     }
 
     @Override
