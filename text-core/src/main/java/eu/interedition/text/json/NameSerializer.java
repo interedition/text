@@ -11,7 +11,7 @@ import org.codehaus.jackson.map.SerializerProvider;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-class NameSerializer extends JsonSerializer<Name> {
+public class NameSerializer extends JsonSerializer<Name> {
 
     @Override
     public Class<Name> handledType() {

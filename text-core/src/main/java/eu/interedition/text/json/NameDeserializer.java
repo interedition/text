@@ -17,7 +17,7 @@ import static org.codehaus.jackson.JsonToken.VALUE_STRING;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-class NameDeserializer extends JsonDeserializer<Name> {
+public class NameDeserializer extends JsonDeserializer<Name> {
     @Override
     public Name deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException {
         if (!START_ARRAY.equals(jp.getCurrentToken())) {
