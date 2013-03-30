@@ -1,5 +1,5 @@
 <@ie.page "Home">
-<h1>Text Repository Server API</h1>
+<h1>Text Server API</h1>
 <h2>Adding XML documents to the text repository</h2>
 <h3>method=POST path=/xml-transform</h3>
 <p>Feed XML documents to the text repository</p>
