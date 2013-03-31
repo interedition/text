@@ -45,7 +45,7 @@ public class Database {
 
     public static JdbcConnectionPool h2(File directory) {
         Preconditions.checkArgument(directory.isDirectory() || directory.mkdirs(), directory);
-        return h2(new File(directory, "texts").getPath() + ";DB_CLOSE_DELAY=10");
+        return h2(new File(directory, "texts").getPath() + ";DB_CLOSE_DELAY=10;CACHE_SIZE=131072");
     }
 
     protected static JdbcConnectionPool h2(String url) {
