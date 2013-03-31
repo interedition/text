@@ -20,13 +20,17 @@
 package eu.interedition.text.http;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import eu.interedition.text.http.io.Templates;
+import eu.interedition.text.ld.Annotation;
+import eu.interedition.text.ld.AnnotationReader;
 import eu.interedition.text.ld.Segment;
 import eu.interedition.text.ld.Store;
 import eu.interedition.text.ld.Transactions;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
+import sun.nio.fs.LinuxFileSystemProvider;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
@@ -35,6 +39,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -72,7 +78,12 @@ public class TextResource {
                         view.put("length", length);
                         view.put("segment", writer.writeValueAsString(textSegment));
                         view.put("text", store.read(id, textSegment));
-                        view.put("annotations", writer.writeValueAsString(store.annotations(id, textSegment)));
+                        view.put("annotations", writer.writeValueAsString(store.annotations(id, textSegment, new AnnotationReader<List<Annotation>>() {
+                            @Override
+                            public List<Annotation> read(Iterator<Annotation> annotations) {
+                                return Lists.newArrayList(annotations);
+                            }
+                        })));
                         return view;
                     } catch (IOException e) {
                         throw Throwables.propagate(e);

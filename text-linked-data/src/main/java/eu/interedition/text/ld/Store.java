@@ -275,11 +275,12 @@ public class Store {
             throw Throwables.propagate(e);
         }
     }
-    public List<Annotation> annotations(long text) {
-        return annotations(text, null);
+
+    public <R> R annotations(long text, AnnotationReader<R> reader) {
+        return annotations(text, null, reader);
     }
 
-    public List<Annotation> annotations(long text, Segment segment) {
+    public <R> R annotations(long text, Segment segment, AnnotationReader<R> reader) {
         ResultSet resultSet = null;
         try {
             if (selectAnnotations == null) {
@@ -296,36 +297,54 @@ public class Store {
             selectAnnotations.setLong(2, segment == null ? 0 : segment.start());
             selectAnnotations.setLong(3, segment == null ? Integer.MAX_VALUE : segment.end());
 
-            resultSet = selectAnnotations.executeQuery();
+            final ResultSet rs = resultSet = selectAnnotations.executeQuery();
+            final ObjectReader objectReader = objectMapper.reader();
+            return reader.read(new AbstractIterator<Annotation>() {
 
-            final ObjectReader reader = objectMapper.reader();
-            final List<Annotation> annotations = Lists.newLinkedList();
-            Annotation current = null;
-            SortedSet<AnnotationTarget> currentTargets = null;
-            while (resultSet.next()) {
-                final long id = resultSet.getLong(1);
-                if (current == null || current.id() != id) {
-                    final Clob data = resultSet.getClob(2);
-                    Reader dataReader = null;
+                Annotation current = null;
+                SortedSet<AnnotationTarget> currentTargets = null;
+
+                @Override
+                protected Annotation computeNext() {
                     try {
-                        annotations.add(current = new Annotation(id,
-                                currentTargets = new TreeSet<AnnotationTarget>(),
-                                reader.readTree(dataReader = data.getCharacterStream())
-                        ));
-                    } finally {
-                        Closeables.close(dataReader, false);
+                        Annotation next = null;
+                        while (rs.next()) {
+                            final long id = rs.getLong(1);
+                            if (current == null || current.id() != id) {
+                                next = current;
+                                final Clob data = rs.getClob(2);
+                                Reader dataReader = null;
+                                try {
+                                    current = new Annotation(id,
+                                            currentTargets = new TreeSet<AnnotationTarget>(),
+                                            objectReader.readTree(dataReader = data.getCharacterStream())
+                                    );
+                                } finally {
+                                    Closeables.close(dataReader, false);
+                                }
+                                data.free();
+                            }
+                            final long targetText = rs.getLong(3);
+                            if (targetText != 0) {
+                                currentTargets.add(new AnnotationTarget(targetText, rs.getInt(4), rs.getInt(5)));
+                            }
+                            if (next != null) {
+                                return next;
+                            }
+                        }
+                        if (current != null) {
+                            next = current;
+                            current = null;
+                        }
+                        return (next == null ? endOfData() : next);
+                    } catch (IOException e) {
+                        throw Throwables.propagate(e);
+                    } catch (SQLException e) {
+                        throw Throwables.propagate(e);
                     }
-                    data.free();
                 }
-                final long targetText = resultSet.getLong(3);
-                if (targetText != 0) {
-                    currentTargets.add(new AnnotationTarget(targetText, resultSet.getInt(4), resultSet.getInt(5)));
-                }
-            }
-            return annotations;
+            });
         } catch (SQLException e) {
-            throw Throwables.propagate(e);
-        } catch (IOException e) {
             throw Throwables.propagate(e);
         } finally {
             Database.closeQuietly(resultSet);
