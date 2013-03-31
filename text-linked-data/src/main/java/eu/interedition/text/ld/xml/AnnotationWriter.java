@@ -19,6 +19,7 @@
 
 package eu.interedition.text.ld.xml;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -45,6 +46,7 @@ public abstract class AnnotationWriter extends TextExtractorComponent {
 
     public static final QName XML_ELEMENT_NAME = new QName(XMLConstants.XML_NS_URI, "name");
     public static final QName XML_ELEMENT_ATTRS = new QName(XMLConstants.XML_NS_URI, "attributes");
+    public static final QName XML_NODE_PATH = new QName(XMLConstants.XML_NS_URI, "path");
 
     protected final Store texts;
     private final List<Annotation> batch = Lists.newArrayListWithCapacity(BATCH_SIZE);
@@ -80,6 +82,10 @@ public abstract class AnnotationWriter extends TextExtractorComponent {
             for (int a = 0; a < ac; a++) {
                 attributes.put(extractor().name(reader.getAttributeName(a)), reader.getAttributeValue(a));
             }
+        }
+        final NodePath nodePath = extractor().nodePath();
+        if (nodePath != null) {
+            data.put(extractor().name(XML_NODE_PATH), objectMapper.valueToTree(nodePath.elementPath()));
         }
         return data;
 

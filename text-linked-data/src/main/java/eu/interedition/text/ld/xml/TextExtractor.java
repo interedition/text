@@ -41,6 +41,7 @@ public class TextExtractor implements StreamFilter {
 
     private WhitespaceCompressor whitespaceCompressor;
     private OffsetMapper offsetMapper;
+    private NodePath nodePath;
     private Map<String, String> namespaceMapping;
     private Iterable<TextExtractorComponent> components;
     private int offset;
@@ -59,6 +60,10 @@ public class TextExtractor implements StreamFilter {
         return this;
     }
 
+    public TextExtractor withNodePath() {
+        this.nodePath = new NodePath();
+        return this;
+    }
     public TextExtractor withNamespaceMapping(Map<String, String> namespaceMapping) {
         this.namespaceMapping = namespaceMapping;
         return this;
@@ -70,6 +75,10 @@ public class TextExtractor implements StreamFilter {
 
     public XMLStreamReader execute(XMLInputFactory inputFactory, XMLStreamReader source, Iterable<StreamFilter> filters) throws XMLStreamException {
         final List<StreamFilter> chain = Lists.newLinkedList();
+
+        if (nodePath != null) {
+            chain.add(nodePath.reset());
+        }
 
         offset = 0;
         components = Iterables.filter(filters, TextExtractorComponent.class);
@@ -123,6 +132,10 @@ public class TextExtractor implements StreamFilter {
 
     public int offset() {
         return offset;
+    }
+
+    public NodePath nodePath() {
+        return nodePath;
     }
 
     public int insert(String text) {

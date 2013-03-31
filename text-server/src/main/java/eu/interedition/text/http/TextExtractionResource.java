@@ -135,7 +135,8 @@ public class TextExtractionResource {
                 .withNamespaceMapping(new NamespaceMapping())
                 .withWhitespaceCompression(new ContainerElementContext.ElementNameBased(
                         Sets.newHashSet("div", "text", "body")
-                ));
+                ))
+                .withNodePath();
     }
 
     List<StreamFilter> createTextExtractionFilterChain(Store store, long text) {
