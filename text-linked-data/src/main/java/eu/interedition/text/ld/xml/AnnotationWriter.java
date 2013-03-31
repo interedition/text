@@ -29,11 +29,11 @@ import eu.interedition.text.ld.Store;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
-import javax.xml.stream.XMLStreamConstants;
+import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
@@ -43,17 +43,14 @@ import java.util.List;
 public abstract class AnnotationWriter extends TextExtractorComponent {
     private static final int BATCH_SIZE = 1024;
 
+    public static final QName XML_ELEMENT_NAME = new QName(XMLConstants.XML_NS_URI, "name");
+    public static final QName XML_ELEMENT_ATTRS = new QName(XMLConstants.XML_NS_URI, "attributes");
+
     protected final Store texts;
+    private final List<Annotation> batch = Lists.newArrayListWithCapacity(BATCH_SIZE);
 
     public AnnotationWriter(Store texts) {
         this.texts = texts;
-    }
-
-    @Override
-    protected void onXMLEvent(XMLStreamReader reader) {
-        if (reader.getEventType() == XMLStreamConstants.END_DOCUMENT) {
-            flush();
-        }
     }
 
     protected void write(Annotation... annotations) {
@@ -61,16 +58,37 @@ public abstract class AnnotationWriter extends TextExtractorComponent {
     }
 
     protected void write(Iterable<Annotation> annotations) {
-        Iterables.addAll(this.annotations, annotations);
-        if (this.annotations.size() >= BATCH_SIZE) {
+        Iterables.addAll(this.batch, annotations);
+        if (this.batch.size() >= BATCH_SIZE) {
             flush();
         }
+    }
+
+    public void flush() {
+        if (!batch.isEmpty()) {
+            texts.annotate(batch);
+            batch.clear();
+        }
+    }
+
+    protected ObjectNode annotationData(XMLStreamReader reader, ObjectMapper objectMapper) {
+        final ObjectNode data = objectMapper.createObjectNode();
+        data.put(extractor().name(XML_ELEMENT_NAME), extractor().name(reader.getName()));
+        final int ac = reader.getAttributeCount();
+        if (ac > 0) {
+            final ObjectNode attributes = data.putObject(extractor().name(XML_ELEMENT_ATTRS));
+            for (int a = 0; a < ac; a++) {
+                attributes.put(extractor().name(reader.getAttributeName(a)), reader.getAttributeValue(a));
+            }
+        }
+        return data;
+
     }
 
     public static class Elements extends AnnotationWriter {
 
         private final Deque<Annotation> annotations = new ArrayDeque<Annotation>();
-        private final Deque<Integer> offsets = new ArrayDeque<Integer>();
+        private final Deque<Integer> startOffsets = new ArrayDeque<Integer>();
         private final IdentifierGenerator annotationIds;
         private final long text;
         private final ObjectMapper objectMapper;
@@ -86,31 +104,22 @@ public abstract class AnnotationWriter extends TextExtractorComponent {
         protected void onXMLEvent(XMLStreamReader reader) {
             final int offset = extractor().offset();
             if (reader.isStartElement()) {
-                final ObjectNode data = objectMapper.createObjectNode();
-                data.put("xml:name", extractor().name(reader.getName()));
-                final int ac = reader.getAttributeCount();
-                if (ac > 0) {
-                    final ObjectNode attributes = data.putObject("xml:attrs");
-                    for (int a = 0; a < ac; a++) {
-                        attributes.put(extractor().name(reader.getAttributeName(a)), reader.getAttributeValue(a));
-                    }
-                }
-                annotations.push(new Annotation(annotationIds.next(), Sets.<AnnotationTarget>newTreeSet(), data));
-                offsets.push(offset);
+                annotations.push(new Annotation(
+                        annotationIds.next(),
+                        Sets.<AnnotationTarget>newTreeSet(),
+                        annotationData(reader, objectMapper)
+                ));
+                startOffsets.push(offset);
             } else if (reader.isEndElement()) {
+                final int start = startOffsets.pop();
                 final Annotation started = annotations.pop();
-                write(new Annotation(started.id(), new AnnotationTarget(text, offsets.pop(), offset), started.data()));
+                write(new Annotation(
+                        started.id(),
+                        new AnnotationTarget(text, start, offset),
+                        started.data()
+                ));
             }
-            super.onXMLEvent(reader);
         }
     }
 
-    private void flush() {
-        if (!annotations.isEmpty()) {
-            texts.annotate(annotations);
-            annotations.clear();
-        }
-    }
-
-    private final List<Annotation> annotations = Lists.newArrayListWithCapacity(BATCH_SIZE);
 }

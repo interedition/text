@@ -231,7 +231,7 @@ public class Store {
                 @Override
                 public XMLStreamReader write(final Writer writer) throws IOException {
                     try {
-                        return extractor.runOn(xif, reader, Iterables.concat(filters, Collections.singleton(
+                        return extractor.execute(xif, reader, Iterables.concat(filters, Collections.singleton(
                                 new TextExtractorComponent() {
                                     @Override
                                     protected int text(String text) {

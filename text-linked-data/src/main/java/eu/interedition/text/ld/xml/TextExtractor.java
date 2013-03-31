@@ -64,11 +64,11 @@ public class TextExtractor implements StreamFilter {
         return this;
     }
 
-    public XMLStreamReader runOn(XMLInputFactory inputFactory, XMLStreamReader source, StreamFilter... filters) throws XMLStreamException {
-        return runOn(inputFactory, source, Arrays.asList(filters));
+    public XMLStreamReader execute(XMLInputFactory inputFactory, XMLStreamReader source, StreamFilter... filters) throws XMLStreamException {
+        return execute(inputFactory, source, Arrays.asList(filters));
     }
 
-    public XMLStreamReader runOn(XMLInputFactory inputFactory, XMLStreamReader source, Iterable<StreamFilter> filters) throws XMLStreamException {
+    public XMLStreamReader execute(XMLInputFactory inputFactory, XMLStreamReader source, Iterable<StreamFilter> filters) throws XMLStreamException {
         final List<StreamFilter> chain = Lists.newLinkedList();
 
         offset = 0;
@@ -104,6 +104,10 @@ public class TextExtractor implements StreamFilter {
         }
         while (reader.hasNext()) {
             reader.next();
+        }
+
+        for (AnnotationWriter annotationWriter : Iterables.filter(components, AnnotationWriter.class)) {
+            annotationWriter.flush();
         }
 
         return reader;

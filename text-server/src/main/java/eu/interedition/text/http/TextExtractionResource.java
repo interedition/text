@@ -20,12 +20,15 @@
 package eu.interedition.text.http;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.sun.jersey.multipart.FormDataParam;
 import eu.interedition.text.http.io.Templates;
 import eu.interedition.text.ld.IdentifierGenerator;
 import eu.interedition.text.ld.Store;
 import eu.interedition.text.ld.Transactions;
+import eu.interedition.text.ld.clix.ClixRangeAnnotationWriter;
+import eu.interedition.text.ld.tei.MilestoneAnnotationWriter;
 import eu.interedition.text.ld.xml.AnnotationWriter;
 import eu.interedition.text.ld.xml.ContainerElementContext;
 import eu.interedition.text.ld.xml.ContextualStreamFilter;
@@ -45,6 +48,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
@@ -54,6 +58,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
@@ -65,6 +70,7 @@ public class TextExtractionResource {
     final IdentifierGenerator textIds;
     final IdentifierGenerator annotationIds;
     final Templates templates;
+    final XMLInputFactory2 xmlInputFactory;
 
     @Inject
     public TextExtractionResource(Transactions transactions,
@@ -75,6 +81,7 @@ public class TextExtractionResource {
         this.textIds = textIds;
         this.annotationIds = annotationIds;
         this.templates = templates;
+        this.xmlInputFactory = XML.createXMLInputFactory();
     }
 
     @GET
@@ -95,29 +102,16 @@ public class TextExtractionResource {
     }
 
     URI extract(UriInfo uriInfo, Source source) throws XMLStreamException, IOException {
-        final XMLInputFactory2 xif = XML.createXMLInputFactory();
         XMLStreamReader reader = null;
         try {
-            final XMLStreamReader xml = reader = xif.createXMLStreamReader(source);
-            long id = transactions.execute(new Transactions.Transaction<Long>() {
+            final XMLStreamReader xml = reader = xmlInputFactory.createXMLStreamReader(source);
+            final long id = textIds.next();
+            transactions.execute(new Transactions.Transaction<Object>() {
                 @Override
-                public Long withStore(Store store) throws SQLException {
+                public Object withStore(Store store) throws SQLException {
                     try {
-                        final long id = textIds.next();
-                        store.withSchema().write(id, xif, xml,
-                                new TextExtractor()
-                                        .withNamespaceMapping(new NamespaceMapping())
-                                        .withWhitespaceCompression(new ContainerElementContext.ElementNameBased(
-                                                Sets.newHashSet("div")
-                                        )),
-                                new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg")),
-                                new ContextualStreamFilter.ElementNameBased(
-                                        Sets.newHashSet("text"),
-                                        Sets.newHashSet("TEI", "TEI.2", "back", "front", "note", "figure")
-                                ),
-                                new AnnotationWriter.Elements(store, id, annotationIds)
-                        );
-                        return id;
+                        store.write(id, xmlInputFactory, xml, createTextExtractor(), createTextExtractionFilterChain(store, id));
+                        return null;
                     } catch (IOException e) {
                         throw Throwables.propagate(e);
                     } catch (XMLStreamException e) {
@@ -136,4 +130,24 @@ public class TextExtractionResource {
         }
     }
 
+    TextExtractor createTextExtractor() {
+        return new TextExtractor()
+                .withNamespaceMapping(new NamespaceMapping())
+                .withWhitespaceCompression(new ContainerElementContext.ElementNameBased(
+                        Sets.newHashSet("div", "text", "body")
+                ));
+    }
+
+    List<StreamFilter> createTextExtractionFilterChain(Store store, long text) {
+        return Lists.<StreamFilter>newArrayList(
+                new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg", "sp", "speaker")),
+                new ContextualStreamFilter.ElementNameBased(
+                        Sets.newHashSet("text"),
+                        Sets.newHashSet("TEI", "TEI.2", "back", "front", "note", "figure", "fw")
+                ),
+                new ClixRangeAnnotationWriter(store, text, annotationIds),
+                new MilestoneAnnotationWriter(store, text, annotationIds),
+                new AnnotationWriter.Elements(store, text, annotationIds)
+        );
+    }
 }
