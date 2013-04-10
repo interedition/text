@@ -64,6 +64,7 @@ public class TextExtractor implements StreamFilter {
         this.nodePath = new NodePath();
         return this;
     }
+
     public TextExtractor withNamespaceMapping(Map<String, String> namespaceMapping) {
         this.namespaceMapping = namespaceMapping;
         return this;

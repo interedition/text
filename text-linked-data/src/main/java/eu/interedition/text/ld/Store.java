@@ -27,6 +27,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
+import com.google.common.io.Closer;
 import eu.interedition.text.ld.util.Database;
 import eu.interedition.text.ld.xml.TextExtractor;
 import eu.interedition.text.ld.xml.TextExtractorComponent;
@@ -41,6 +42,7 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -402,19 +404,19 @@ public class Store {
 
 
     public Store withSchema() {
-        Statement stmt = null;
+        final Closer closer = Closer.create();
         try {
-            stmt = connection.createStatement();
-            stmt.executeUpdate("create table if not exists interedition_text (id bigint primary key, text_content clob not null)");
-            stmt.executeUpdate("create table if not exists interedition_text_annotation (id bigint primary key, anno_data clob not null)");
-            stmt.executeUpdate("create table if not exists interedition_text_annotation_target (annotation_id bigint not null references interedition_text_annotation (id) on delete cascade, text_id bigint not null, range_start bigint not null, range_end bigint not null)");
-            stmt.executeUpdate("create index if not exists interedition_text_annotation_target_text on interedition_text_annotation_target (text_id)");
-            stmt.executeUpdate("create index if not exists interedition_text_annotation_target_range on interedition_text_annotation_target (range_start, range_end)");
+            restore(closer.register(new InputStreamReader(
+                    getClass().getResourceAsStream("schema.sql"),
+                    Charset.forName("UTF-8")
+            )));
             return this;
-        } catch (SQLException e) {
-            throw Throwables.propagate(e);
         } finally {
-            Database.closeQuietly(stmt);
+            try {
+                closer.close();
+            } catch (IOException e) {
+                throw Throwables.propagate(e);
+            }
         }
     }
 
