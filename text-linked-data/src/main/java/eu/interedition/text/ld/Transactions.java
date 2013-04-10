@@ -90,7 +90,7 @@ public class Transactions {
                     listener.added(addedTexts, addedAnnotations);
                 }
                 if (removed) {
-                    listener.added(removedTexts, removedAnnotations);
+                    listener.removed(removedTexts, removedAnnotations);
                 }
             }
         }
