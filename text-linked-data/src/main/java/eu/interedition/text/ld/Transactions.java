@@ -28,6 +28,8 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
@@ -37,6 +39,7 @@ public class Transactions {
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
     private final Iterable<StoreListener> listeners;
+    private ExecutorService listenerExecutorService;
 
     public Transactions(DataSource dataSource, ObjectMapper objectMapper, Iterable<StoreListener> listeners) {
         this.dataSource = dataSource;
@@ -46,6 +49,11 @@ public class Transactions {
 
     public Transactions(DataSource dataSource, ObjectMapper objectMapper, StoreListener... listeners) {
         this(dataSource, objectMapper, Arrays.asList(listeners));
+    }
+
+    public Transactions withListenerExecutorService(ExecutorService listenerExecutorService) {
+        this.listenerExecutorService = listenerExecutorService;
+        return this;
     }
 
     public <R> R execute(Transaction<R> transaction) throws SQLException {
@@ -85,12 +93,29 @@ public class Transactions {
             final Iterable<Long> addedAnnotations = Iterables.unmodifiableIterable(store.addedAnnotations);
             final Iterable<Long> removedTexts = Iterables.unmodifiableIterable(store.removedTexts);
             final Iterable<Long> removedAnnotations = Iterables.unmodifiableIterable(store.removedAnnotations);
-            for (StoreListener listener : listeners) {
-                if (added) {
-                    listener.added(addedTexts, addedAnnotations);
+            if (listenerExecutorService == null) {
+                for (StoreListener listener : listeners) {
+                    if (added) {
+                        listener.added(addedTexts, addedAnnotations);
+                    }
+                    if (removed) {
+                        listener.removed(removedTexts, removedAnnotations);
+                    }
                 }
-                if (removed) {
-                    listener.removed(removedTexts, removedAnnotations);
+            } else {
+                for (final StoreListener listener : listeners) {
+                    listenerExecutorService.submit(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            if (added) {
+                                listener.added(addedTexts, addedAnnotations);
+                            }
+                            if (removed) {
+                                listener.removed(removedTexts, removedAnnotations);
+                            }
+                            return null;
+                        }
+                    });
                 }
             }
         }
