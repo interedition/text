@@ -21,6 +21,7 @@ package eu.interedition.text.ld;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import eu.interedition.text.ld.util.Database;
 import eu.interedition.text.ld.xml.AnnotationWriter;
 import eu.interedition.text.ld.xml.ContainerElementContext;
@@ -53,10 +54,7 @@ public class XMLTest {
 
     @BeforeClass
     public static void init() throws SQLException {
-        transactions = new Transactions(
-                dataSource = Database.h2(new File("/home/gregor/text-repo")),
-                new ObjectMapper()
-        );
+        transactions = new Transactions(dataSource = Database.h2(), new ObjectMapper());
         textIds = new IdentifierGenerator(dataSource, "interedition_text_id").withSchema();
         annotationIds = new IdentifierGenerator(dataSource, "interedition_annotation_id").withSchema();
     }
