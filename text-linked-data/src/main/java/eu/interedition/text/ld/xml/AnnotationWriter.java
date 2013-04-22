@@ -19,7 +19,6 @@
 
 package eu.interedition.text.ld.xml;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;

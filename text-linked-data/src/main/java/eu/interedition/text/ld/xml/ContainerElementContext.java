@@ -19,8 +19,6 @@
 
 package eu.interedition.text.ld.xml;
 
-import com.google.common.base.Objects;
-
 import javax.xml.stream.XMLStreamReader;
 import java.util.Set;
 import java.util.Stack;

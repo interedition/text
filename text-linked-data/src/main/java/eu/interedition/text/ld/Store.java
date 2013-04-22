@@ -266,22 +266,18 @@ public class Store {
         if (Iterables.isEmpty(ids)) {
             return;
         }
+        ResultSet rs = null;
         try {
             final Object[] idArray = Iterables.toArray(ids, Object.class);
+            final List<Long> annotationIds = Lists.newLinkedList();
 
             if (selectAnnotationsByTexts == null) {
                 selectAnnotationsByTexts = connection.prepareStatement("select distinct annotation_id from interedition_text_annotation_target where text_id in (?)");
             }
             selectAnnotationsByTexts.setObject(1, idArray);
-
-            final List<Long> annotationIds = Lists.newLinkedList();
-            final ResultSet rs = selectAnnotationsByTexts.executeQuery();
-            try {
-                while (rs.next()) {
-                    annotationIds.add(rs.getLong(1));
-                }
-            } finally {
-                Database.closeQuietly(rs);
+            rs = selectAnnotationsByTexts.executeQuery();
+            while (rs.next()) {
+                annotationIds.add(rs.getLong(1));
             }
 
             deleteAnnotations(annotationIds);
@@ -296,6 +292,8 @@ public class Store {
             Iterables.addAll(removedTexts, ids);
         } catch (SQLException e) {
             throw Throwables.propagate(e);
+        }  finally {
+            Database.closeQuietly(rs);
         }
     }
 
