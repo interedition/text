@@ -2,9 +2,11 @@
 
 <div class="yui3-g">
     <div class="yui3-u-3-4"><div class="content">
+        <h2>Text</h2>
         <div id="text"></div>
     </div></div>
     <div class="yui3-u-1-4"><div class="content">
+        <h2>Annotations</h2>
         <div id="annotations"></div>
     </div></div>
 </div>
@@ -15,7 +17,7 @@
 <script type="text/javascript" src="${ap}/segment-index.js"></script>
 <script type="text/javascript" src="${ap}/text.js"></script>
 <script type="text/javascript">
-    YUI().use("node", "event", "interedition-text", "json-stringify", function(Y) {
+    YUI().use("node", "event", "interedition-text", "substitute", "json-stringify", function(Y) {
         Y.on("domready", function() {
             text = new Y.interedition.AnnotatedText(${id?c}, "${text?js_string}", ${annotations}, ${segment}, ${length?c});
 
@@ -69,7 +71,18 @@
                 annotationsContainer.empty();
                 if (segment[0] < segment[1]) {
                     Y.Array.each(text.index().find(segment), function(a) {
-                        this.appendChild("<p></p>").set("text", Y.JSON.stringify(a));
+                        var div = this.appendChild("<div></div>").addClass("annotation");
+                        div.appendChild("<h4></h4>").set("text", "<" + a.data["xml:name"] + ">");
+
+                        if (a.data["xml:attributes"]) {
+                            var attrList = div.appendChild("<ul></ul>");
+                            Y.Object.each(a.data["xml:attributes"], function(v, k) {
+                                attrList.append(Y.substitute('<li><span class="attr-name">{name}</span>: {value}</li>', {
+                                    name: k,
+                                    value: v
+                                }));
+                            });
+                        }
                     }, annotationsContainer);
                 }
             });

@@ -51,5 +51,21 @@ body {
 }
 
 #text {
-    font-size: 108%;
+    font-size: 123.1%;
+}
+
+#annotations .annotation {
+    margin: .5em;
+    padding: .5em;
+    background: #eee;
+    border: 1px solid #ccc;
+}
+
+#annotations ul, #annotations li {
+    list-style: none;
+    margin: .25em;
+}
+
+#annotations .attr-name {
+    font-style: italic;
 }

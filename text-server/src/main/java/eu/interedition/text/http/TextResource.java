@@ -30,7 +30,6 @@ import eu.interedition.text.ld.Store;
 import eu.interedition.text.ld.Transactions;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
-import sun.nio.fs.LinuxFileSystemProvider;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
