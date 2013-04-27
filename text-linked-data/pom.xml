@@ -11,7 +11,8 @@
     </parent>
 
     <artifactId>text-linked-data</artifactId>
-    <name>Standoff-Markup/Annotation Text Repository Model for Linked Data</name>
+    <version>2.0-SNAPSHOT</version>
+    <name>Interedition Text Model Library v2</name>
 
     <dependencies>
         <dependency>

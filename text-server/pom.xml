@@ -11,7 +11,9 @@
     </parent>
 
     <artifactId>text-server</artifactId>
-    <name>Standoff-Markup/Annotation Text Repository Server</name>
+    <version>2.0-SNAPSHOT</version>
+    <name>Interedition Text Server</name>
+    <description>Standoff-Markup/Annotation Text Server</description>
 
     <dependencies>
         <dependency>

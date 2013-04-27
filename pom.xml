@@ -16,12 +16,49 @@
     <packaging>pom</packaging>
     <name>Interedition Text</name>
     <description>Stand-off Markup/Annotation Text Model</description>
+    <url>https://github.com/interedition/text/</url>
+    <organization>
+        <name>The Interedition Development Group</name>
+        <url>http://www.interedition.eu/</url>
+    </organization>
+    <inceptionYear>2010</inceptionYear>
 
     <modules>
         <module>text-core</module>
         <module>text-linked-data</module>
         <module>text-server</module>
     </modules>
+
+    <licenses>
+        <license>
+            <name>GNU General Public License</name>
+            <url>http://www.gnu.org/licenses/gpl.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git@github.com:interedition/text.git</connection>
+        <developerConnection>scm:git:git@github.com:interedition/text.git</developerConnection>
+        <url>git@github.com:interedition/text.git</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/interedition/text/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>gremid</id>
+            <name>Gregor Middell</name>
+            <url>http://gregor.middell.net/</url>
+        </developer>
+    </developers>
+
+    <properties>
+        <jersey.version>1.15</jersey.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -128,31 +165,8 @@
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
-                    <encoding>UTF-8</encoding>
                 </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.4.3</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
-    <properties>
-        <jersey.version>1.15</jersey.version>
-    </properties>
 </project>
