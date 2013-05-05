@@ -151,6 +151,7 @@ public class LayerRelation<T> implements Layer<T> {
                     result = repository.data(dataStream = dataBlob.getBinaryStream());
                 } finally {
                     Closeables.close(dataStream, false);
+                    dataBlob.free();
                 }
             }
             repository.commit(connection);
