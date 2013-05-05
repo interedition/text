@@ -134,6 +134,7 @@ public class H2Query<T> {
                                     resultSet = null;
                                     JdbcUtil.closeQuietly(queryStmt);
                                     repository.commit(connection);
+                                    close();
                                 }
                                 if (result == null && layer != null) {
                                     result = layer;
