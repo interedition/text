@@ -61,27 +61,21 @@ public class Server implements Runnable {
         final String yuiRootDir = System.getProperty("yui.dir", "");
         Preconditions.checkArgument(yuiRootDir.isEmpty() || new File(yuiRootDir).isDirectory(), yuiRootDir);
 
-        final String templateDir = System.getProperty("template.dir", "");
-        Preconditions.checkArgument(templateDir.isEmpty() || new File(templateDir).isDirectory(), templateDir);
+        final File templateDir = new File(System.getProperty("template.dir", "template"));
+        Preconditions.checkArgument(templateDir.isDirectory(), "Templates: " + templateDir);
 
-        final String assetDir = Objects.firstNonNull(
-                System.getProperty("asset.dir"),
-                Strings.emptyToNull(getClass().getResource("/asset").getFile())
-        );
-        Preconditions.checkArgument(assetDir != null && new File(assetDir).isDirectory(), "Assets: " + assetDir);
+        final File assetDir = new File(System.getProperty("asset.dir", "asset"));
+        Preconditions.checkArgument(assetDir.isDirectory(), "Assets: " + assetDir);
 
         final Map<String, String> configuration = Maps.newHashMap();
         configuration.put("contextPath", contextPath);
-        configuration.put("assetRoot", assetDir);
+        configuration.put("assetRoot", assetDir.getPath());
         configuration.put("assetPath", contextPath + "/asset");
         configuration.put("yuiRoot", yuiRootDir);
-        configuration.put("yuiPath", yuiRootDir.isEmpty()
-                ? "http://yui.yahooapis.com/3.9.1/build"
-                : (contextPath + "/yui")
-        );
+        configuration.put("yuiPath", yuiRootDir.isEmpty() ? "http://yui.yahooapis.com/3.9.1/build" : (contextPath + "/yui"));
         configuration.put("dataDirectory", dataDirectory(commandLine).getPath());
         configuration.put("httpPort", commandLine.getOptionValue("p", "7369"));
-        configuration.put("templatePath", templateDir);
+        configuration.put("templatePath", templateDir.getPath());
 
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine(Joiner.on("\n").join(Iterables.concat(Collections.singleton("Configuration:"), configuration.entrySet())));
