@@ -17,32 +17,37 @@
  * along with CollateX.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.interedition.text.http;
+package eu.interedition.text.xml;
 
-import eu.interedition.text.util.Database;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import javax.sql.DataSource;
-import java.io.File;
+import javax.xml.stream.XMLStreamReader;
+import java.util.Set;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-@Singleton
-public class DataSourceProvider implements Provider<DataSource> {
+public abstract class LineBreaker extends TextExtractorComponent {
 
-    private final File dataDirectory;
-
-    @Inject
-    public DataSourceProvider(@Named("dataDirectory") String dataDirectory) {
-        this.dataDirectory = new File(dataDirectory);
-    }
 
     @Override
-    public DataSource get() {
-        return Database.h2(dataDirectory);
+    protected void onXMLEvent(XMLStreamReader reader) {
+        if (breakLine(reader)) {
+            extractor().insert("\n");
+        }
+    }
+
+    protected abstract boolean breakLine(XMLStreamReader reader);
+
+    public static class ElementNamedBased extends LineBreaker {
+
+        private final Set<String> lineElements;
+
+        public ElementNamedBased(Set<String> lineElements) {
+            this.lineElements = lineElements;
+        }
+
+        @Override
+        protected boolean breakLine(XMLStreamReader reader) {
+            return (reader.isStartElement() && extractor().offset() > 0 && lineElements.contains(reader.getLocalName()));
+        }
     }
 }

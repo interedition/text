@@ -17,32 +17,16 @@
  * along with CollateX.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.interedition.text.http;
+package eu.interedition.text;
 
-import eu.interedition.text.util.Database;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import javax.sql.DataSource;
-import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-@Singleton
-public class DataSourceProvider implements Provider<DataSource> {
+public interface TextWriter<R> {
 
-    private final File dataDirectory;
+    R write(Writer writer) throws IOException;
 
-    @Inject
-    public DataSourceProvider(@Named("dataDirectory") String dataDirectory) {
-        this.dataDirectory = new File(dataDirectory);
-    }
-
-    @Override
-    public DataSource get() {
-        return Database.h2(dataDirectory);
-    }
 }

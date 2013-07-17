@@ -25,7 +25,6 @@
 
     <modules>
         <module>text-core</module>
-        <module>text-linked-data</module>
         <module>text-server</module>
     </modules>
 

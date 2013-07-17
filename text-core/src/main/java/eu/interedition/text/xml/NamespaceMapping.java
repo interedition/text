@@ -17,32 +17,28 @@
  * along with CollateX.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.interedition.text.http;
+package eu.interedition.text.xml;
 
-import eu.interedition.text.util.Database;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import javax.sql.DataSource;
-import java.io.File;
+import javax.xml.XMLConstants;
+import java.util.HashMap;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-@Singleton
-public class DataSourceProvider implements Provider<DataSource> {
+public class NamespaceMapping extends HashMap<String, String> {
 
-    private final File dataDirectory;
 
-    @Inject
-    public DataSourceProvider(@Named("dataDirectory") String dataDirectory) {
-        this.dataDirectory = new File(dataDirectory);
-    }
+    public static final String TEI_NS_URI = "http://www.tei-c.org/ns/1.0";
+    public static final String CLIX_NS_URI = "http://lmnl.net/clix";
 
-    @Override
-    public DataSource get() {
-        return Database.h2(dataDirectory);
+    public NamespaceMapping() {
+        super();
+        put(XMLConstants.XML_NS_URI, "xml");
+        put(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns");
+        put(XMLConstants.RELAXNG_NS_URI, "rng");
+        put(XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI, "xsi");
+        put(XMLConstants.W3C_XML_SCHEMA_NS_URI, "xsd");
+        put(TEI_NS_URI, "tei");
+        put(CLIX_NS_URI, "clix");
     }
 }

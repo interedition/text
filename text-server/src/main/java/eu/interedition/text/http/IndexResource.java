@@ -22,9 +22,9 @@ package eu.interedition.text.http;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import eu.interedition.text.http.io.Templates;
-import eu.interedition.text.ld.Store;
-import eu.interedition.text.ld.TextBrowser;
-import eu.interedition.text.ld.Transactions;
+import eu.interedition.text.Store;
+import eu.interedition.text.TextBrowser;
+import eu.interedition.text.Transactions;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;

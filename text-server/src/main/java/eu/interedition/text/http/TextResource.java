@@ -23,11 +23,11 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import eu.interedition.text.http.io.Templates;
-import eu.interedition.text.ld.Annotation;
-import eu.interedition.text.ld.AnnotationReader;
-import eu.interedition.text.ld.Segment;
-import eu.interedition.text.ld.Store;
-import eu.interedition.text.ld.Transactions;
+import eu.interedition.text.Annotation;
+import eu.interedition.text.AnnotationReader;
+import eu.interedition.text.Segment;
+import eu.interedition.text.Store;
+import eu.interedition.text.Transactions;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 

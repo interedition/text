@@ -20,8 +20,8 @@
 package eu.interedition.text.http;
 
 import com.google.common.base.Throwables;
-import eu.interedition.text.ld.Store;
-import eu.interedition.text.ld.Transactions;
+import eu.interedition.text.Store;
+import eu.interedition.text.Transactions;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.inject.Inject;

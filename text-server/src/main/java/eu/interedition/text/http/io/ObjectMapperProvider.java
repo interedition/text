@@ -19,7 +19,7 @@
 
 package eu.interedition.text.http.io;
 
-import eu.interedition.text.ld.util.TextModule;
+import eu.interedition.text.util.TextModule;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.inject.Provider;

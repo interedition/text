@@ -17,32 +17,42 @@
  * along with CollateX.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.interedition.text.http;
+package eu.interedition.text;
 
-import eu.interedition.text.util.Database;
+import com.google.common.collect.Sets;
+import org.codehaus.jackson.JsonNode;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import javax.sql.DataSource;
-import java.io.File;
+import java.util.Collections;
+import java.util.SortedSet;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-@Singleton
-public class DataSourceProvider implements Provider<DataSource> {
+public class Annotation {
 
-    private final File dataDirectory;
+    private final long id;
+    private final SortedSet<AnnotationTarget> targets;
+    private final JsonNode data;
 
-    @Inject
-    public DataSourceProvider(@Named("dataDirectory") String dataDirectory) {
-        this.dataDirectory = new File(dataDirectory);
+    public Annotation(long id, SortedSet<AnnotationTarget> targets, JsonNode data) {
+        this.id = id;
+        this.targets = targets;
+        this.data = data;
     }
 
-    @Override
-    public DataSource get() {
-        return Database.h2(dataDirectory);
+    public Annotation(long id, AnnotationTarget target, JsonNode data) {
+        this(id, Sets.newTreeSet(Collections.singleton(target)), data);
+    }
+
+    public long id() {
+        return id;
+    }
+
+    public SortedSet<AnnotationTarget> targets() {
+        return targets;
+    }
+
+    public JsonNode data() {
+        return data;
     }
 }

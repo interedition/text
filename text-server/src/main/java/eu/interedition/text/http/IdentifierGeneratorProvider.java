@@ -20,7 +20,7 @@
 package eu.interedition.text.http;
 
 import com.google.inject.Provider;
-import eu.interedition.text.ld.IdentifierGenerator;
+import eu.interedition.text.IdentifierGenerator;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
