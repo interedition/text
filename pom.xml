@@ -10,7 +10,7 @@
 
     <groupId>eu.interedition</groupId>
     <artifactId>text-core</artifactId>
-    <version>1.5</version>
+    <version>1.6-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>Interedition Text</name>
     <description>Stand-off Markup/Annotation Text Model</description>
