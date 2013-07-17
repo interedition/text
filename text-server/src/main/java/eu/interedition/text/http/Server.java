@@ -13,9 +13,13 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.name.Names;
+import dagger.Module;
+import dagger.Provides;
 import eu.interedition.text.http.io.ObjectMapperProvider;
 import eu.interedition.text.IdentifierGenerator;
 import eu.interedition.text.Transactions;
+import eu.interedition.text.util.Database;
+import eu.interedition.text.util.TextModule;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -35,11 +39,12 @@ import java.util.logging.Logger;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
+@Module
 public class Server implements Runnable {
     private static final Logger LOG = Logger.getLogger(Server.class.getName());
 
     Deque<Service> services = Lists.newLinkedList();
-    Injector injector;
+    Configuration configuration;
 
     public static void main(String... args) {
         try {
@@ -67,19 +72,20 @@ public class Server implements Runnable {
         final File assetDir = new File(System.getProperty("asset.dir", "asset"));
         Preconditions.checkArgument(assetDir.isDirectory(), "Assets: " + assetDir);
 
-        final Map<String, String> configuration = Maps.newHashMap();
+        this.configuration = new Configuration();
         configuration.put("contextPath", contextPath);
         configuration.put("assetRoot", assetDir.getPath());
         configuration.put("assetPath", contextPath + "/asset");
         configuration.put("yuiRoot", yuiRootDir);
         configuration.put("yuiPath", yuiRootDir.isEmpty() ? "http://yui.yahooapis.com/3.9.1/build" : (contextPath + "/yui"));
-        configuration.put("dataDirectory", dataDirectory(commandLine).getPath());
+        configuration.put("dataDirectory", dataDirectory(commandLine));
         configuration.put("httpPort", commandLine.getOptionValue("p", "7369"));
-        configuration.put("templatePath", templateDir.getPath());
+        configuration.put("templatePath", templateDir);
 
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine(Joiner.on("\n").join(Iterables.concat(Collections.singleton("Configuration:"), configuration.entrySet())));
         }
+
         injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
@@ -92,6 +98,23 @@ public class Server implements Runnable {
             }
         });
         return this;
+    }
+
+    @Provides
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    @Provides
+    public DataSource getDatabase() {
+        return Database.h2((File) configuration.get("dataDirectory"));
+    }
+
+    @Provides
+    public ObjectMapper getObjectMapper() {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new TextModule());
+        return objectMapper;
     }
 
     @Override
