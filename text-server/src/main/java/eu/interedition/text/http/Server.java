@@ -3,20 +3,18 @@ package eu.interedition.text.http;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.name.Names;
+import com.google.common.util.concurrent.ServiceManager;
+import com.sun.jersey.api.container.filter.GZIPContentEncodingFilter;
+import com.sun.jersey.api.core.DefaultResourceConfig;
+import com.sun.jersey.server.impl.container.filter.NormalizeFilter;
 import dagger.Module;
+import dagger.ObjectGraph;
 import dagger.Provides;
-import eu.interedition.text.http.io.ObjectMapperProvider;
-import eu.interedition.text.IdentifierGenerator;
 import eu.interedition.text.Transactions;
 import eu.interedition.text.util.Database;
 import eu.interedition.text.util.TextModule;
@@ -28,18 +26,19 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.sql.DataSource;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-@Module
+@Module(injects = HttpService.class)
 public class Server implements Runnable {
     private static final Logger LOG = Logger.getLogger(Server.class.getName());
 
@@ -79,24 +78,13 @@ public class Server implements Runnable {
         configuration.put("yuiRoot", yuiRootDir);
         configuration.put("yuiPath", yuiRootDir.isEmpty() ? "http://yui.yahooapis.com/3.9.1/build" : (contextPath + "/yui"));
         configuration.put("dataDirectory", dataDirectory(commandLine));
-        configuration.put("httpPort", commandLine.getOptionValue("p", "7369"));
+        configuration.put("httpPort", Integer.parseInt(commandLine.getOptionValue("p", "7369")));
         configuration.put("templatePath", templateDir);
 
         if (LOG.isLoggable(Level.FINE)) {
             LOG.fine(Joiner.on("\n").join(Iterables.concat(Collections.singleton("Configuration:"), configuration.entrySet())));
         }
 
-        injector = Guice.createInjector(new AbstractModule() {
-            @Override
-            protected void configure() {
-                Names.bindProperties(binder(), configuration);
-                bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
-                bind(DataSource.class).toProvider(DataSourceProvider.class).asEagerSingleton();
-                bind(Transactions.class).toProvider(TextTransactionsProvider.class).asEagerSingleton();
-                bind(IdentifierGenerator.class).annotatedWith(Names.named("texts")).toProvider(new IdentifierGeneratorProvider("text"));
-                bind(IdentifierGenerator.class).annotatedWith(Names.named("annotations")).toProvider(new IdentifierGeneratorProvider("annotation"));
-            }
-        });
         return this;
     }
 
@@ -117,26 +105,49 @@ public class Server implements Runnable {
         return objectMapper;
     }
 
+    @Provides
+    public Transactions transactions(DataSource dataSource, ObjectMapper objectMapper) {
+        return new Transactions(dataSource, objectMapper);
+    }
+
+    @Provides
+    public DefaultResourceConfig httpResourceConfig(IndexResource indexResource, TextResource textResource, TextExtractionResource extractionResource) {
+        final DefaultResourceConfig rc = new DefaultResourceConfig();
+
+        final HashMap<String,Object> config = Maps.newHashMap();
+        config.put(DefaultResourceConfig.PROPERTY_CONTAINER_REQUEST_FILTERS, Arrays.<Class<?>>asList(NormalizeFilter.class, GZIPContentEncodingFilter.class));
+        config.put(DefaultResourceConfig.PROPERTY_CONTAINER_RESPONSE_FILTERS, Arrays.<Class<?>>asList(GZIPContentEncodingFilter.class));
+        config.put(DefaultResourceConfig.FEATURE_CANONICALIZE_URI_PATH, true);
+        config.put(DefaultResourceConfig.FEATURE_NORMALIZE_URI, true);
+        config.put(DefaultResourceConfig.FEATURE_REDIRECT, true);
+        rc.setPropertiesAndFeatures(config);
+        rc.getSingletons().add(indexResource);
+        rc.getSingletons().add(textResource);
+        rc.getSingletons().add(extractionResource);
+
+        return rc;
+    }
+
     @Override
     public void run() {
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
+        final ServiceManager serviceManager = new ServiceManager(Arrays.asList(ObjectGraph.create(this).get(HttpService.class)));
+        serviceManager.addListener(new ServiceManager.Listener() {
+            public void stopped() {}
+            public void healthy() {}
+            public void failure(Service service) {
+                System.exit(1);
+            }
+        }, MoreExecutors.sameThreadExecutor());
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                final List<ListenableFuture<Service.State>> serviceStates = Lists.newLinkedList();
-                for (Service service : services) {
-                    serviceStates.add(service.stop());
-                }
-                for (ListenableFuture<Service.State> serviceState : serviceStates) {
-                    try {
-                        serviceState.get();
-                    } catch (InterruptedException e) {
-                    } catch (ExecutionException e) {
-                    }
+                try {
+                    serviceManager.stopAsync().awaitStopped(5, TimeUnit.SECONDS);
+                } catch (TimeoutException timeout) {
                 }
             }
-        }));
-
-        start(HttpService.class);
+        });
+        serviceManager.startAsync();
 
         synchronized (this) {
             try {
@@ -145,13 +156,6 @@ public class Server implements Runnable {
             }
         }
     }
-
-    protected void start(Class<? extends Service> service) {
-        final Service instance = injector.getInstance(service);
-        instance.start();
-        services.push(instance);
-    }
-
 
     protected File dataDirectory(CommandLine commandLine) {
         final File dataDirectoryPath = Objects.firstNonNull(

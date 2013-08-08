@@ -2,23 +2,19 @@ package eu.interedition.text.http.io;
 
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
-import com.google.common.io.Closeables;
+import eu.interedition.text.http.Configuration;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.cache.FileTemplateLoader;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModelException;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collections;
@@ -27,28 +23,22 @@ import java.util.Collections;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 @Singleton
-public class Templates extends Configuration {
+public class Templates extends freemarker.template.Configuration {
 
     @Inject
-    public Templates(@Named("templatePath") String templatePath,
-                     @Named("contextPath") String contextPath,
-                     @Named("assetPath") String assetPath,
-                     @Named("yuiPath") String yuiPath) {
+    public Templates(Configuration configuration) {
         super();
         try {
-            setSharedVariable("cp", contextPath);
-            setSharedVariable("ap", assetPath);
-            setSharedVariable("yp", yuiPath);
+            setSharedVariable("cp", configuration.get("contextPath"));
+            setSharedVariable("ap", configuration.get("assetPath"));
+            setSharedVariable("yp", configuration.get("yuiPath"));
             setAutoIncludes(Collections.singletonList("/header.ftl"));
             setDefaultEncoding("UTF-8");
             setOutputEncoding("UTF-8");
             setURLEscapingCharset("UTF-8");
             setStrictSyntaxMode(true);
             setWhitespaceStripping(true);
-            setTemplateLoader(Strings.isNullOrEmpty(templatePath)
-                    ? new ClassTemplateLoader(getClass(), "/templates")
-                    : new FileTemplateLoader(new File(templatePath))
-            );
+            setTemplateLoader(new FileTemplateLoader((File) configuration.get("templatePath")));
         } catch (TemplateModelException e) {
             throw Throwables.propagate(e);
         } catch (IOException e) {

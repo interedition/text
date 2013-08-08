@@ -30,6 +30,7 @@
             <groupId>com.squareup.dagger</groupId>
             <artifactId>dagger-compiler</artifactId>
             <version>1.0.1</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

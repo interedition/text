@@ -21,6 +21,7 @@ package eu.interedition.text.http;
 
 import com.google.common.util.concurrent.AbstractIdleService;
 import com.sun.jersey.api.container.ContainerFactory;
+import com.sun.jersey.api.core.DefaultResourceConfig;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.Request;
@@ -40,24 +41,23 @@ public class HttpService extends AbstractIdleService {
     private HttpServer httpServer;
 
     @Inject
-    public HttpService(@Named("httpPort") int httpPort,
-                       @Named("contextPath") String contextPath,
-                       @Named("yuiRoot") String yuiRoot,
-                       @Named("yuiPath") String yuiPath,
-                       @Named("assetRoot") String assetRoot,
-                       @Named("assetPath") String assetPath,
-                       HttpResourceConfig httpResourceConfig) {
+    public HttpService(Configuration configuration, DefaultResourceConfig resourceConfig) {
+        this.httpServer = HttpServer.createSimpleServer(null, (Integer) configuration.get("httpPort"));
 
-        this.httpServer = HttpServer.createSimpleServer(null, httpPort);
-
-        final HttpHandler httpHandler = ContainerFactory.createContainer(HttpHandler.class, httpResourceConfig);
+        final HttpHandler httpHandler = ContainerFactory.createContainer(HttpHandler.class, resourceConfig);
 
         final ServerConfiguration config = httpServer.getServerConfiguration();
+
+        final String assetPath = (String) configuration.get("assetPath");
+        final String assetRoot = (String) configuration.get("assetRoot");
         config.addHttpHandler(new CustomStaticHttpHandler(assetRoot, assetPath), assetPath + "/*");
+
+        final String yuiRoot = (String) configuration.get("yuiRoot");
+        final String yuiPath = (String) configuration.get("yuiPath");
         if (!yuiRoot.isEmpty()) {
             config.addHttpHandler(new CustomStaticHttpHandler(yuiRoot, yuiPath), yuiPath + "/*");
         }
-        config.addHttpHandler(httpHandler, contextPath + "/*");
+        config.addHttpHandler(httpHandler, configuration.get("contextPath") + "/*");
     }
 
     @Override

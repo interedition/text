@@ -23,11 +23,11 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.sun.jersey.multipart.FormDataParam;
-import eu.interedition.text.http.io.Templates;
 import eu.interedition.text.IdentifierGenerator;
 import eu.interedition.text.Store;
 import eu.interedition.text.Transactions;
 import eu.interedition.text.clix.ClixRangeAnnotationWriter;
+import eu.interedition.text.http.io.Templates;
 import eu.interedition.text.tei.MilestoneAnnotationWriter;
 import eu.interedition.text.xml.AnnotationWriter;
 import eu.interedition.text.xml.ContainerElementContext;
@@ -39,7 +39,8 @@ import eu.interedition.text.xml.XML;
 import org.codehaus.stax2.XMLInputFactory2;
 
 import javax.inject.Inject;
-import javax.inject.Named;
+import javax.inject.Singleton;
+import javax.sql.DataSource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -64,6 +65,7 @@ import java.util.List;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 @Path("/xml-extract")
+@Singleton
 public class TextExtractionResource {
 
     final Transactions transactions;
@@ -73,13 +75,10 @@ public class TextExtractionResource {
     final XMLInputFactory2 xmlInputFactory;
 
     @Inject
-    public TextExtractionResource(Transactions transactions,
-                                  @Named("texts") IdentifierGenerator textIds,
-                                  @Named("annotations") IdentifierGenerator annotationIds,
-                                  Templates templates) {
+    public TextExtractionResource(Transactions transactions, DataSource dataSource, Templates templates) {
         this.transactions = transactions;
-        this.textIds = textIds;
-        this.annotationIds = annotationIds;
+        this.textIds = new IdentifierGenerator(dataSource, "interedition_texts_id").withSchema();
+        this.annotationIds = new IdentifierGenerator(dataSource, "interedition_annotations_id").withSchema();
         this.templates = templates;
         this.xmlInputFactory = XML.createXMLInputFactory();
     }
