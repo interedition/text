@@ -22,16 +22,17 @@ package eu.interedition.text.http;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import eu.interedition.text.Repository;
 import eu.interedition.text.http.io.Templates;
 import eu.interedition.text.Annotation;
-import eu.interedition.text.AnnotationReader;
 import eu.interedition.text.Segment;
-import eu.interedition.text.Store;
-import eu.interedition.text.Transactions;
+import eu.interedition.text.repository.Store;
+import eu.interedition.text.repository.Stores;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -46,15 +47,16 @@ import java.util.Map;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 @Path("/text/{id}")
+@Singleton
 public class TextResource {
 
-    private final Transactions transactions;
+    private final Repository repository;
     private final Templates templates;
     private final ObjectMapper objectMapper;
 
     @Inject
-    public TextResource(Transactions transactions, Templates templates, ObjectMapper objectMapper) {
-        this.transactions = transactions;
+    public TextResource(Repository repository, Templates templates, ObjectMapper objectMapper) {
+        this.repository = repository;
         this.templates = templates;
         this.objectMapper = objectMapper;
     }
@@ -64,11 +66,11 @@ public class TextResource {
     public Response text(@PathParam("id") final long id, @PathParam("start") int start, @PathParam("end") int end) throws SQLException, IOException {
         final Segment segment = new Segment(Math.max(0, start), Math.min(start + 100000, end));
         try {
-            return templates.render("text.ftl", transactions.execute(new Transactions.Transaction<Map<String, Object>>() {
+            return templates.render("text.ftl", repository.execute(new Repository.Transaction<Map<String, Object>>() {
                 @Override
-                protected Map<String, Object> withStore(Store store) throws SQLException {
+                public Map<String, Object> transactional(Store store) {
                     try {
-                        final long length = store.length(id);
+                        final long length = store.textLength(id);
                         final Segment textSegment = new Segment(segment.start(), (int) Math.min(segment.end(), length));
                         final ObjectWriter writer = objectMapper.writer();
 
@@ -76,10 +78,10 @@ public class TextResource {
                         view.put("id", id);
                         view.put("length", length);
                         view.put("segment", writer.writeValueAsString(textSegment));
-                        view.put("text", store.read(id, textSegment));
-                        view.put("annotations", writer.writeValueAsString(store.annotations(id, textSegment, new AnnotationReader<List<Annotation>>() {
+                        view.put("text", Stores.toString(store, id, textSegment));
+                        view.put("annotations", writer.writeValueAsString(store.annotations(id, textSegment, new Store.AnnotationsCallback<List<Annotation>>() {
                             @Override
-                            public List<Annotation> read(Iterator<Annotation> annotations) {
+                            public List<Annotation> annotations(Iterator<Annotation> annotations) {
                                 return Lists.newArrayList(annotations);
                             }
                         })));

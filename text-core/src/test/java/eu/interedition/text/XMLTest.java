@@ -21,9 +21,9 @@ package eu.interedition.text;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
-import eu.interedition.text.IdentifierGenerator;
-import eu.interedition.text.Store;
-import eu.interedition.text.Transactions;
+import eu.interedition.text.repository.SqlRepository;
+import eu.interedition.text.repository.Store;
+import eu.interedition.text.repository.Stores;
 import eu.interedition.text.util.Database;
 import eu.interedition.text.xml.AnnotationWriter;
 import eu.interedition.text.xml.ContainerElementContext;
@@ -49,15 +49,11 @@ import java.sql.SQLException;
 public class XMLTest {
 
     protected static DataSource dataSource;
-    protected static Transactions transactions;
-    protected static IdentifierGenerator textIds;
-    protected static IdentifierGenerator annotationIds;
+    protected static Repository repository;
 
     @BeforeClass
     public static void init() throws SQLException {
-        transactions = new Transactions(dataSource = Database.h2(), new ObjectMapper());
-        textIds = new IdentifierGenerator(dataSource, "interedition_text_id").withSchema();
-        annotationIds = new IdentifierGenerator(dataSource, "interedition_annotation_id").withSchema();
+        repository = new SqlRepository(dataSource = Database.h2(), new ObjectMapper()).withSchema();
     }
 
     @Test
@@ -75,12 +71,12 @@ public class XMLTest {
         XMLStreamReader reader = null;
         try {
             final XMLStreamReader xml = reader = xif.createXMLStreamReader(getClass().getResource(resource));
-            reader = transactions.execute(new Transactions.Transaction<XMLStreamReader>() {
+            reader = repository.execute(new Repository.Transaction<XMLStreamReader>() {
                 @Override
-                public XMLStreamReader withStore(Store store) throws SQLException {
+                public XMLStreamReader transactional(Store store) {
                     try {
-                        final long id = textIds.next();
-                        return store.withSchema().write(id, xif, xml,
+                        final long id = repository.textIds().next();
+                        return Stores.xml(store, id, xif, xml,
                                 new TextExtractor().withWhitespaceCompression(new ContainerElementContext.ElementNameBased(
                                         Sets.newHashSet("div")
                                 )).withNamespaceMapping(new NamespaceMapping()),
@@ -89,7 +85,7 @@ public class XMLTest {
                                         Sets.newHashSet("text"),
                                         Sets.newHashSet("TEI.2", "back", "front", "note", "figure")
                                 ),
-                                new AnnotationWriter.Elements(store, id, annotationIds)
+                                new AnnotationWriter.Elements(store, id, repository.annotationIds())
                         );
                     } catch (IOException e) {
                         throw Throwables.propagate(e);

@@ -23,11 +23,11 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.sun.jersey.multipart.FormDataParam;
-import eu.interedition.text.IdentifierGenerator;
-import eu.interedition.text.Store;
-import eu.interedition.text.Transactions;
+import eu.interedition.text.Repository;
 import eu.interedition.text.clix.ClixRangeAnnotationWriter;
 import eu.interedition.text.http.io.Templates;
+import eu.interedition.text.repository.Store;
+import eu.interedition.text.repository.Stores;
 import eu.interedition.text.tei.MilestoneAnnotationWriter;
 import eu.interedition.text.xml.AnnotationWriter;
 import eu.interedition.text.xml.ContainerElementContext;
@@ -58,7 +58,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -68,17 +68,13 @@ import java.util.List;
 @Singleton
 public class TextExtractionResource {
 
-    final Transactions transactions;
-    final IdentifierGenerator textIds;
-    final IdentifierGenerator annotationIds;
+    final Repository repository;
     final Templates templates;
     final XMLInputFactory2 xmlInputFactory;
 
     @Inject
-    public TextExtractionResource(Transactions transactions, DataSource dataSource, Templates templates) {
-        this.transactions = transactions;
-        this.textIds = new IdentifierGenerator(dataSource, "interedition_texts_id").withSchema();
-        this.annotationIds = new IdentifierGenerator(dataSource, "interedition_annotations_id").withSchema();
+    public TextExtractionResource(Repository repository, DataSource dataSource, Templates templates) {
+        this.repository = repository;
         this.templates = templates;
         this.xmlInputFactory = XML.createXMLInputFactory();
     }
@@ -104,12 +100,12 @@ public class TextExtractionResource {
         XMLStreamReader reader = null;
         try {
             final XMLStreamReader xml = reader = xmlInputFactory.createXMLStreamReader(source);
-            final long id = textIds.next();
-            transactions.execute(new Transactions.Transaction<Object>() {
+            final long id = repository.textIds().next();
+            repository.execute(new Repository.Transaction<Object>() {
                 @Override
-                public Object withStore(Store store) throws SQLException {
+                public Object transactional(Store store) {
                     try {
-                        store.write(id, xmlInputFactory, xml, createTextExtractor(), createTextExtractionFilterChain(store, id));
+                        Stores.xml(store, id, xmlInputFactory, xml, createTextExtractor(), createTextExtractionFilterChain(store, id));
                         return null;
                     } catch (IOException e) {
                         throw Throwables.propagate(e);
@@ -139,6 +135,7 @@ public class TextExtractionResource {
     }
 
     List<StreamFilter> createTextExtractionFilterChain(Store store, long text) {
+        final Iterator<Long> annotationIds = repository.annotationIds();
         return Lists.<StreamFilter>newArrayList(
                 new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg", "sp", "speaker")),
                 new ContextualStreamFilter.ElementNameBased(

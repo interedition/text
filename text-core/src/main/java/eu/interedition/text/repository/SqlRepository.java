@@ -17,10 +17,11 @@
  * along with CollateX.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.interedition.text;
+package eu.interedition.text.repository;
 
 import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
+import eu.interedition.text.Repository;
 import eu.interedition.text.util.Database;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -28,50 +29,80 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class Transactions {
+public class SqlRepository implements Repository {
 
     private final DataSource dataSource;
     private final ObjectMapper objectMapper;
-    private final Iterable<StoreListener> listeners;
+    private final Iterable<Store.Listener> listeners;
+    private final SqlIdentifierGenerator textIds;
+    private final SqlIdentifierGenerator annotationIds;
     private ExecutorService listenerExecutorService;
 
-    public Transactions(DataSource dataSource, ObjectMapper objectMapper, Iterable<StoreListener> listeners) {
+    public SqlRepository(DataSource dataSource, ObjectMapper objectMapper, Iterable<Store.Listener> listeners) {
         this.dataSource = dataSource;
         this.objectMapper = objectMapper;
         this.listeners = listeners;
+        this.textIds = new SqlIdentifierGenerator(dataSource, "interedition_texts_id");
+        this.annotationIds = new SqlIdentifierGenerator(dataSource, "interedition_annotations_id");
     }
 
-    public Transactions(DataSource dataSource, ObjectMapper objectMapper, StoreListener... listeners) {
+    public SqlRepository(DataSource dataSource, ObjectMapper objectMapper, Store.Listener... listeners) {
         this(dataSource, objectMapper, Arrays.asList(listeners));
     }
 
-    public Transactions withListenerExecutorService(ExecutorService listenerExecutorService) {
+    public SqlRepository withSchema() {
+        textIds.withSchema();
+        annotationIds.withSchema();
+        return execute(new Transaction<SqlRepository>() {
+            @Override
+            public SqlRepository transactional(Store store) {
+                ((SqlStore) store).writeSchema();
+                return SqlRepository.this;
+            }
+        });
+    }
+
+    public SqlRepository withListenerExecutorService(ExecutorService listenerExecutorService) {
         this.listenerExecutorService = listenerExecutorService;
         return this;
     }
 
-    public <R> R execute(Transaction<R> transaction) throws SQLException {
-        Store store = null;
+    @Override
+    public Iterator<Long> textIds() {
+        return textIds;
+    }
+
+    @Override
+    public Iterator<Long> annotationIds() {
+        return annotationIds;
+    }
+
+    public <R> R execute(Transaction<R> transaction) {
+        SqlStore store = null;
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
             connection.setAutoCommit(false);
             connection.setReadOnly(transaction.isReadOnly());
-            R result = transaction.withStore(store = new Store(connection, objectMapper));
+            R result = transaction.transactional(store = new SqlStore(connection, objectMapper));
             connection.commit();
             notifyListeners(store);
             return result;
         } catch (Throwable t) {
             if (connection != null) {
-                connection.rollback();
+                try {
+                    connection.rollback();
+                } catch (SQLException e) {
+                    throw Throwables.propagate(e);
+                }
             }
-            Throwables.propagateIfInstanceOf(Throwables.getRootCause(t), SQLException.class);
             throw Throwables.propagate(t);
         } finally {
             if (store != null) {
@@ -82,7 +113,7 @@ public class Transactions {
 
     }
 
-    private void notifyListeners(Store store) {
+    private void notifyListeners(SqlStore store) {
         if (Iterables.isEmpty(listeners)) {
             return;
         }
@@ -94,7 +125,7 @@ public class Transactions {
             final Iterable<Long> removedTexts = Iterables.unmodifiableIterable(store.removedTexts);
             final Iterable<Long> removedAnnotations = Iterables.unmodifiableIterable(store.removedAnnotations);
             if (listenerExecutorService == null) {
-                for (StoreListener listener : listeners) {
+                for (Store.Listener listener : listeners) {
                     if (added) {
                         listener.added(addedTexts, addedAnnotations);
                     }
@@ -103,7 +134,7 @@ public class Transactions {
                     }
                 }
             } else {
-                for (final StoreListener listener : listeners) {
+                for (final Store.Listener listener : listeners) {
                     listenerExecutorService.submit(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
@@ -121,11 +152,4 @@ public class Transactions {
         }
     }
 
-    public static abstract class Transaction<R> {
-        protected abstract R withStore(Store store) throws SQLException;
-
-        public boolean isReadOnly() {
-            return false;
-        }
-    }
 }

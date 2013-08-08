@@ -15,7 +15,10 @@ import com.sun.jersey.server.impl.container.filter.NormalizeFilter;
 import dagger.Module;
 import dagger.ObjectGraph;
 import dagger.Provides;
-import eu.interedition.text.Transactions;
+import eu.interedition.text.Repository;
+import eu.interedition.text.repository.MemoryRepository;
+import eu.interedition.text.repository.MemoryStore;
+import eu.interedition.text.repository.SqlRepository;
 import eu.interedition.text.util.Database;
 import eu.interedition.text.util.TextModule;
 import org.apache.commons.cli.CommandLine;
@@ -24,6 +27,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import javax.inject.Singleton;
 import javax.sql.DataSource;
 import java.io.File;
 import java.util.Arrays;
@@ -42,7 +46,6 @@ import java.util.logging.Logger;
 public class Server implements Runnable {
     private static final Logger LOG = Logger.getLogger(Server.class.getName());
 
-    Deque<Service> services = Lists.newLinkedList();
     Configuration configuration;
 
     public static void main(String... args) {
@@ -105,9 +108,10 @@ public class Server implements Runnable {
         return objectMapper;
     }
 
+    @Singleton
     @Provides
-    public Transactions transactions(DataSource dataSource, ObjectMapper objectMapper) {
-        return new Transactions(dataSource, objectMapper);
+    public Repository repository(DataSource dataSource, ObjectMapper objectMapper) {
+        return new MemoryRepository(new MemoryStore(objectMapper));//new SqlRepository(dataSource, objectMapper);
     }
 
     @Provides

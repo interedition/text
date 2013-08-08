@@ -21,12 +21,12 @@ package eu.interedition.text.http;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import eu.interedition.text.Repository;
 import eu.interedition.text.http.io.Templates;
-import eu.interedition.text.Store;
-import eu.interedition.text.TextBrowser;
-import eu.interedition.text.Transactions;
+import eu.interedition.text.repository.Store;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
@@ -41,25 +41,26 @@ import java.util.Map;
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
 @Path("/")
+@Singleton
 public class IndexResource {
 
-    private final Transactions transactions;
+    private final Repository repository;
     private final Templates templates;
 
     @Inject
-    public IndexResource(Transactions transactions, Templates templates) {
-        this.transactions = transactions;
+    public IndexResource(Repository repository, Templates templates) {
+        this.repository = repository;
         this.templates = templates;
     }
 
     @GET
     public Response index() throws IOException, SQLException {
-        return templates.render("index.ftl", transactions.execute(new Transactions.Transaction<Map<String,Object>>() {
+        return templates.render("index.ftl", repository.execute(new Repository.Transaction<Map<String, Object>>() {
             @Override
-            protected Map<String,Object> withStore(Store store) throws SQLException {
-                return Collections.<String, Object>singletonMap("texts", store.browse(new TextBrowser<List<Long>>() {
+            public Map<String, Object> transactional(Store store) {
+                return Collections.<String, Object>singletonMap("texts", store.contents(new Store.ContentsCallback<List<Long>>() {
                     @Override
-                    public List<Long> text(Iterator<Long> ids) {
+                    public List<Long> contents(Iterator<Long> ids) {
                         return Lists.newArrayList(Iterators.limit(ids, 1000));
                     }
                 }));

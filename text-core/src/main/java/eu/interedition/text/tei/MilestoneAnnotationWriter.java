@@ -26,8 +26,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import eu.interedition.text.Annotation;
 import eu.interedition.text.AnnotationTarget;
-import eu.interedition.text.IdentifierGenerator;
-import eu.interedition.text.Store;
+import eu.interedition.text.repository.Store;
 import eu.interedition.text.xml.AnnotationWriter;
 import eu.interedition.text.xml.NamespaceMapping;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -38,6 +37,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -61,7 +61,7 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
     private static final String ID_ATTR_NAME = "id";
 
     private final long text;
-    private final IdentifierGenerator annotationIds;
+    private final Iterator<Long> annotationIds;
     private final ObjectMapper objectMapper;
 
     private final Deque<Boolean> handledElements = new ArrayDeque<Boolean>();
@@ -69,7 +69,7 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
     private final Map<String, Annotation> milestones = Maps.newHashMap();
     private final Map<String, Integer> milestoneStarts = Maps.newHashMap();
 
-    public MilestoneAnnotationWriter(Store texts, long text, IdentifierGenerator annotationIds) {
+    public MilestoneAnnotationWriter(Store texts, long text, Iterator<Long> annotationIds) {
         super(texts);
         this.text = text;
         this.annotationIds = annotationIds;

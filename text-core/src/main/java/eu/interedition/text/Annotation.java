@@ -24,6 +24,7 @@ import org.codehaus.jackson.JsonNode;
 
 import java.util.Collections;
 import java.util.SortedSet;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
@@ -44,6 +45,10 @@ public class Annotation {
         this(id, Sets.newTreeSet(Collections.singleton(target)), data);
     }
 
+    public Annotation(SortedSet<AnnotationTarget> targets, JsonNode data) {
+        this(MEMORY_ID_GENERATOR.incrementAndGet(), targets, data);
+    }
+
     public long id() {
         return id;
     }
@@ -55,4 +60,6 @@ public class Annotation {
     public JsonNode data() {
         return data;
     }
+
+    private static final AtomicLong MEMORY_ID_GENERATOR = new AtomicLong();
 }

@@ -17,7 +17,7 @@
  * along with CollateX.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package eu.interedition.text;
+package eu.interedition.text.repository;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -28,24 +28,20 @@ import com.google.common.collect.Maps;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Closer;
+import eu.interedition.text.Annotation;
+import eu.interedition.text.AnnotationTarget;
+import eu.interedition.text.Segment;
 import eu.interedition.text.util.Database;
-import eu.interedition.text.xml.TextExtractor;
-import eu.interedition.text.xml.TextExtractorComponent;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectReader;
 import org.codehaus.jackson.map.ObjectWriter;
 
-import javax.xml.stream.StreamFilter;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.sql.Clob;
@@ -55,7 +51,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -64,7 +59,7 @@ import java.util.TreeSet;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class Store {
+public class SqlStore implements Store {
 
     private final Connection connection;
     private final ObjectMapper objectMapper;
@@ -83,7 +78,7 @@ public class Store {
     List<Long> removedTexts = Lists.newLinkedList();
     List<Long> removedAnnotations = Lists.newLinkedList();
 
-    public Store(Connection connection, ObjectMapper objectMapper) {
+    public SqlStore(Connection connection, ObjectMapper objectMapper) {
         this.connection = connection;
         this.objectMapper = objectMapper;
     }
@@ -103,14 +98,15 @@ public class Store {
         return objectMapper;
     }
 
-    public <R> R browse(TextBrowser<R> browser) {
+    @Override
+    public <R> R contents(ContentsCallback<R> cb) {
         ResultSet resultSet = null;
         try {
             if (selectTexts == null) {
                 selectTexts = connection.prepareStatement("select id from interedition_text order by id desc");
             }
             final ResultSet rs = (resultSet = selectTexts.executeQuery());
-            return browser.text(new AbstractIterator<Long>() {
+            return cb.contents(new AbstractIterator<Long>() {
                 @Override
                 protected Long computeNext() {
                     try {
@@ -130,15 +126,13 @@ public class Store {
         }
     }
 
-    public void read(long id, Writer target) {
-        read(id, null, target);
+    @Override
+    public void text(long id, TextCallback cb) {
+        text(id, null, cb);
     }
 
-    public void read(long id, TextReader consumer) {
-        read(id, null, consumer);
-    }
-
-    public void read(long id, final Segment segment, final TextReader consumer) {
+    @Override
+    public void text(long id, final Segment segment, final TextCallback cb) {
         withTextContent(id, new TextContentCallback<Void>() {
             @Override
             public Void withContent(Clob text) throws IOException, SQLException {
@@ -147,7 +141,7 @@ public class Store {
                     content = new Segment.Reader(content, segment);
                 }
                 try {
-                    consumer.text(content);
+                    cb.text(content);
                 } finally {
                     Closeables.close(content, false);
                 }
@@ -156,26 +150,8 @@ public class Store {
         });
     }
 
-    public void read(long id, final Segment segment, final Writer target) {
-        read(id, segment, new TextReader() {
-            @Override
-            public void text(Reader text) throws IOException {
-                CharStreams.copy(text, target);
-            }
-        });
-    }
-
-    public String read(long id) {
-        return read(id, (Segment) null);
-    }
-
-    public String read(long id, Segment segment) {
-        final StringWriter buf = new StringWriter();
-        read(id, segment, buf);
-        return buf.toString();
-    }
-
-    public SortedMap<Segment, String> read(long id, final SortedSet<Segment> segments) {
+    @Override
+    public SortedMap<Segment, String> segments(long id, final SortedSet<Segment> segments) {
         return withTextContent(id, new TextContentCallback<SortedMap<Segment, String>>() {
             @Override
             public SortedMap<Segment, String> withContent(Clob text) throws SQLException {
@@ -188,7 +164,8 @@ public class Store {
         });
     }
 
-    public long length(long id) {
+    @Override
+    public long textLength(long id) {
         return withTextContent(id, new TextContentCallback<Long>() {
             @Override
             public Long withContent(Clob text) throws IOException, SQLException {
@@ -197,7 +174,7 @@ public class Store {
         });
     }
 
-    public <R> R write(long id, TextWriter<R> writer) {
+    public <R> R add(long id, TextWriter<R> writer) {
 
         try {
             if (insertText == null) {
@@ -227,42 +204,8 @@ public class Store {
         }
     }
 
-    public XMLStreamReader write(long id, XMLInputFactory xif, XMLStreamReader reader, TextExtractor extractor, StreamFilter... filters) throws IOException, XMLStreamException {
-        return write(id, xif, reader, extractor, Arrays.asList(filters));
-    }
-
-    public XMLStreamReader write(long id, final XMLInputFactory xif, final XMLStreamReader reader, final TextExtractor extractor, final Iterable<StreamFilter> filters) throws IOException, XMLStreamException {
-        try {
-            return write(id, new TextWriter<XMLStreamReader>() {
-                @Override
-                public XMLStreamReader write(final Writer writer) throws IOException {
-                    try {
-                        return extractor.execute(xif, reader, Iterables.concat(filters, Collections.singleton(
-                                new TextExtractorComponent() {
-                                    @Override
-                                    protected int text(String text) {
-                                        try {
-                                            writer.write(text);
-                                            return text.length();
-                                        } catch (IOException e) {
-                                            throw Throwables.propagate(e);
-                                        }
-                                    }
-                                }
-                        )));
-                    } catch (Throwable t) {
-                        Throwables.propagateIfInstanceOf(Throwables.getRootCause(t), IOException.class);
-                        throw Throwables.propagate(t);
-                    }
-                }
-            });
-        } catch (Throwable t) {
-            Throwables.propagateIfInstanceOf(Throwables.getRootCause(t), XMLStreamException.class);
-            throw Throwables.propagate(t);
-        }
-    }
-
-    public void delete(Iterable<Long> ids) {
+    @Override
+    public void deleteTexts(Iterable<Long> ids) {
         if (Iterables.isEmpty(ids)) {
             return;
         }
@@ -297,6 +240,7 @@ public class Store {
         }
     }
 
+    @Override
     public void deleteAnnotations(Iterable<Long> ids) {
         if (Iterables.isEmpty(ids)) {
             return;
@@ -318,11 +262,13 @@ public class Store {
 
     }
 
-    public <R> R annotations(long text, AnnotationReader<R> reader) {
-        return annotations(text, null, reader);
+    @Override
+    public <R> R annotations(long text, AnnotationsCallback<R> cb) {
+        return annotations(text, null, cb);
     }
 
-    public <R> R annotations(long text, Segment segment, AnnotationReader<R> reader) {
+    @Override
+    public <R> R annotations(long text, Segment segment, AnnotationsCallback<R> cb) {
         ResultSet resultSet = null;
         try {
             if (selectAnnotations == null) {
@@ -341,7 +287,7 @@ public class Store {
 
             final ResultSet rs = resultSet = selectAnnotations.executeQuery();
             final ObjectReader objectReader = objectMapper.reader();
-            return reader.read(new AbstractIterator<Annotation>() {
+            return cb.annotations(new AbstractIterator<Annotation>() {
 
                 Annotation current = null;
                 SortedSet<AnnotationTarget> currentTargets = null;
@@ -393,6 +339,7 @@ public class Store {
         }
     }
 
+    @Override
     public void annotate(Iterable<Annotation> annotations) {
         if (Iterables.isEmpty(annotations)) {
             return;
@@ -443,7 +390,7 @@ public class Store {
     }
 
 
-    public Store withSchema() {
+    SqlStore writeSchema() {
         final Closer closer = Closer.create();
         try {
             restore(closer.register(new InputStreamReader(

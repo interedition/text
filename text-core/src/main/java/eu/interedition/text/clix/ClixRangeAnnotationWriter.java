@@ -24,8 +24,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import eu.interedition.text.Annotation;
 import eu.interedition.text.AnnotationTarget;
-import eu.interedition.text.IdentifierGenerator;
-import eu.interedition.text.Store;
+import eu.interedition.text.repository.Store;
 import eu.interedition.text.xml.AnnotationWriter;
 import eu.interedition.text.xml.NamespaceMapping;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -35,6 +34,7 @@ import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -46,14 +46,14 @@ public class ClixRangeAnnotationWriter extends AnnotationWriter {
     static final String CLIX_END_ATTR_NAME = "eID";
 
     private final long text;
-    final IdentifierGenerator annotationIds;
+    final Iterator<Long> annotationIds;
     final ObjectMapper objectMapper;
 
     final Deque<Boolean> clixElements = new ArrayDeque<Boolean>();
     final Map<String, Annotation> annotations = Maps.newHashMap();
     final Map<String, Integer> startOffsets = Maps.newHashMap();
 
-    public ClixRangeAnnotationWriter(Store texts, long text, IdentifierGenerator annotationIds) {
+    public ClixRangeAnnotationWriter(Store texts, long text, Iterator<Long> annotationIds) {
         super(texts);
         this.text = text;
         this.annotationIds = annotationIds;

@@ -24,8 +24,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import eu.interedition.text.Annotation;
 import eu.interedition.text.AnnotationTarget;
-import eu.interedition.text.IdentifierGenerator;
-import eu.interedition.text.Store;
+import eu.interedition.text.repository.Store;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
@@ -35,6 +34,7 @@ import javax.xml.stream.XMLStreamReader;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -94,11 +94,11 @@ public abstract class AnnotationWriter extends TextExtractorComponent {
 
         private final Deque<Annotation> annotations = new ArrayDeque<Annotation>();
         private final Deque<Integer> startOffsets = new ArrayDeque<Integer>();
-        private final IdentifierGenerator annotationIds;
+        private final Iterator<Long> annotationIds;
         private final long text;
         private final ObjectMapper objectMapper;
 
-        public Elements(Store store, long text, IdentifierGenerator annotationIds) {
+        public Elements(Store store, long text, Iterator<Long> annotationIds) {
             super(store);
             this.text = text;
             this.objectMapper = store.objectMapper();
