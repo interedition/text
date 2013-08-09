@@ -22,33 +22,32 @@ package eu.interedition.text.xml;
 import com.google.common.base.Objects;
 
 import javax.xml.XMLConstants;
-import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLStreamReader;
 import java.util.Stack;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class WhitespaceCompressor implements StreamFilter {
+public class WhitespaceCompressor extends ConversionFilter {
 
     private final Stack<Boolean> spacePreservationContext = new Stack<Boolean>();
-    private final ContainerElementContext containerElementContext;
+    private final WhitespaceStrippingContext whitespaceStrippingContext;
     private char lastChar = ' ';
 
-    public WhitespaceCompressor(ContainerElementContext containerElementContext) {
-        this.containerElementContext = containerElementContext;
-    }
-
-    public WhitespaceCompressor reset() {
-        spacePreservationContext.clear();
-        containerElementContext.reset();
-        lastChar = ' ';
-        return this;
+    public WhitespaceCompressor(WhitespaceStrippingContext whitespaceStrippingContext) {
+        this.whitespaceStrippingContext = whitespaceStrippingContext;
     }
 
     @Override
-    public boolean accept(XMLStreamReader reader) {
-        containerElementContext.onXMLEvent(reader);
+    public void start() {
+        spacePreservationContext.clear();
+        whitespaceStrippingContext.reset();
+        lastChar = ' ';
+    }
+
+    @Override
+    protected void onXMLEvent(XMLStreamReader reader) {
+        whitespaceStrippingContext.onXMLEvent(reader);
 
         if (reader.isStartElement()) {
             spacePreservationContext.push(spacePreservationContext.isEmpty() ? false : spacePreservationContext.peek());
@@ -60,8 +59,6 @@ public class WhitespaceCompressor implements StreamFilter {
         } else if (reader.isEndElement()) {
             spacePreservationContext.pop();
         }
-
-        return true;
     }
 
     String compress(String text) {
@@ -69,7 +66,7 @@ public class WhitespaceCompressor implements StreamFilter {
         final boolean preserveSpace = Objects.firstNonNull(spacePreservationContext.peek(), false);
         for (int cc = 0, length = text.length(); cc < length; cc++) {
             char currentChar = text.charAt(cc);
-            if (!preserveSpace && Character.isWhitespace(currentChar) && (Character.isWhitespace(lastChar) || containerElementContext.isInContainerElement())) {
+            if (!preserveSpace && Character.isWhitespace(currentChar) && (Character.isWhitespace(lastChar) || whitespaceStrippingContext.isInContainerElement())) {
                 continue;
             }
             if (currentChar == '\n' || currentChar == '\r') {

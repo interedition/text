@@ -20,27 +20,27 @@
 package eu.interedition.text.http;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.sun.jersey.multipart.FormDataParam;
 import eu.interedition.text.Repository;
-import eu.interedition.text.clix.ClixRangeAnnotationWriter;
+import eu.interedition.text.lmnl.ClixRangeAnnotationGenerator;
 import eu.interedition.text.http.io.Templates;
-import eu.interedition.text.repository.Store;
-import eu.interedition.text.repository.Stores;
-import eu.interedition.text.tei.MilestoneAnnotationWriter;
-import eu.interedition.text.xml.AnnotationWriter;
-import eu.interedition.text.xml.ContainerElementContext;
-import eu.interedition.text.xml.ContextualStreamFilter;
+import eu.interedition.text.Texts;
+import eu.interedition.text.tei.MilestoneAnnotationGenerator;
+import eu.interedition.text.xml.AnnotationGenerator;
+import eu.interedition.text.xml.FilterContext;
+import eu.interedition.text.xml.WhitespaceStrippingContext;
+import eu.interedition.text.xml.Converter;
+import eu.interedition.text.xml.ConverterBuilder;
 import eu.interedition.text.xml.LineBreaker;
 import eu.interedition.text.xml.NamespaceMapping;
-import eu.interedition.text.xml.TextExtractor;
+import eu.interedition.text.xml.TextGenerator;
 import eu.interedition.text.xml.XML;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.stax2.XMLInputFactory2;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.sql.DataSource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -49,7 +49,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Source;
@@ -58,8 +57,6 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
@@ -71,12 +68,29 @@ public class TextExtractionResource {
     final Repository repository;
     final Templates templates;
     final XMLInputFactory2 xmlInputFactory;
+    final ConverterBuilder converterBuilder;
 
     @Inject
-    public TextExtractionResource(Repository repository, DataSource dataSource, Templates templates) {
+    public TextExtractionResource(Repository repository, ObjectMapper objectMapper, Templates templates) {
         this.repository = repository;
         this.templates = templates;
         this.xmlInputFactory = XML.createXMLInputFactory();
+        this.converterBuilder = Converter.builder()
+                .withNamespaceMapping(new NamespaceMapping())
+                .withNodePath()
+                .withOffsetMapping()
+                .withWhitespaceCompression(new WhitespaceStrippingContext.ElementNameBased(
+                        Sets.newHashSet("div", "text", "body")
+                ))
+                .filter(new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg", "sp", "speaker")))
+                .filter(new FilterContext.ElementNameBased(
+                        Sets.newHashSet("text"),
+                        Sets.newHashSet("TEI", "TEI.2", "back", "front", "note", "figure", "fw")
+                ))
+                .filter(new ClixRangeAnnotationGenerator(objectMapper))
+                .filter(new MilestoneAnnotationGenerator(objectMapper))
+                .filter(new AnnotationGenerator.Elements(objectMapper))
+                .filter(new TextGenerator());
     }
 
     @GET
@@ -100,20 +114,7 @@ public class TextExtractionResource {
         XMLStreamReader reader = null;
         try {
             final XMLStreamReader xml = reader = xmlInputFactory.createXMLStreamReader(source);
-            final long id = repository.textIds().next();
-            repository.execute(new Repository.Transaction<Object>() {
-                @Override
-                public Object transactional(Store store) {
-                    try {
-                        Stores.xml(store, id, xmlInputFactory, xml, createTextExtractor(), createTextExtractionFilterChain(store, id));
-                        return null;
-                    } catch (IOException e) {
-                        throw Throwables.propagate(e);
-                    } catch (XMLStreamException e) {
-                        throw Throwables.propagate(e);
-                    }
-                }
-            });
+            final long id = Texts.xml(converterBuilder, repository, xmlInputFactory, xml);
             return uriInfo.getBaseUriBuilder().path("/text/" + id).build();
         } catch (Throwable t) {
             final Throwable rootCause = Throwables.getRootCause(t);
@@ -123,28 +124,5 @@ public class TextExtractionResource {
         } finally {
             XML.closeQuietly(reader);
         }
-    }
-
-    TextExtractor createTextExtractor() {
-        return new TextExtractor()
-                .withNamespaceMapping(new NamespaceMapping())
-                .withWhitespaceCompression(new ContainerElementContext.ElementNameBased(
-                        Sets.newHashSet("div", "text", "body")
-                ))
-                .withNodePath();
-    }
-
-    List<StreamFilter> createTextExtractionFilterChain(Store store, long text) {
-        final Iterator<Long> annotationIds = repository.annotationIds();
-        return Lists.<StreamFilter>newArrayList(
-                new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg", "sp", "speaker")),
-                new ContextualStreamFilter.ElementNameBased(
-                        Sets.newHashSet("text"),
-                        Sets.newHashSet("TEI", "TEI.2", "back", "front", "note", "figure", "fw")
-                ),
-                new ClixRangeAnnotationWriter(store, text, annotationIds),
-                new MilestoneAnnotationWriter(store, text, annotationIds),
-                new AnnotationWriter.Elements(store, text, annotationIds)
-        );
     }
 }

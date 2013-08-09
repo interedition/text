@@ -26,7 +26,7 @@ import java.util.Stack;
 /**
 * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
 */
-public class ContainerElementContext {
+public class WhitespaceStrippingContext {
 
     public boolean isInContainerElement() {
         return false;
@@ -38,7 +38,7 @@ public class ContainerElementContext {
     public void reset() {
     }
 
-    public static class ElementNameBased extends ContainerElementContext {
+    public static class ElementNameBased extends WhitespaceStrippingContext {
 
         private final Set<String> containerElements;
         private Stack<Boolean> containerElementStack = new Stack<Boolean>();

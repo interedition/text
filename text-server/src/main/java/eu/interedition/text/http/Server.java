@@ -111,7 +111,7 @@ public class Server implements Runnable {
     @Singleton
     @Provides
     public Repository repository(DataSource dataSource, ObjectMapper objectMapper) {
-        return new MemoryRepository(new MemoryStore(objectMapper));//new SqlRepository(dataSource, objectMapper);
+        return new SqlRepository(dataSource, objectMapper); //new MemoryRepository(new MemoryStore(objectMapper));
     }
 
     @Provides

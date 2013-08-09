@@ -26,12 +26,12 @@ import java.util.Stack;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public abstract class ContextualStreamFilter extends TextExtractorComponent {
+public abstract class FilterContext extends ConversionFilter {
 
     private final Stack<Boolean> filterContext = new Stack<Boolean>();
 
     @Override
-    protected boolean preTextExtraction() {
+    protected boolean callBeforeTextGeneration() {
         return true;
     }
 
@@ -59,7 +59,7 @@ public abstract class ContextualStreamFilter extends TextExtractorComponent {
 
     protected abstract boolean excluded(XMLStreamReader reader);
 
-    public static class ElementNameBased extends ContextualStreamFilter {
+    public static class ElementNameBased extends FilterContext {
 
         private final Set<String> includedNames;
         private final Set<String> excludedNames;

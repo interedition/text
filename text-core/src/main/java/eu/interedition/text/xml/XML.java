@@ -36,15 +36,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
 
@@ -69,16 +66,15 @@ public class XML {
         return xmlOutputFactory;
     }
 
-    public static XMLStreamReader streamReaderChain(XMLStreamReader reader, Iterable<StreamFilter> filters) throws XMLStreamException {
-        final XMLInputFactory2 xif = createXMLInputFactory();
+    public static XMLStreamReader filter(XMLInputFactory xif, XMLStreamReader reader, Iterable<StreamFilter> filters) throws XMLStreamException {
         for (StreamFilter filter : filters) {
             reader = xif.createFilteredReader(reader, filter);
         }
         return reader;
     }
 
-    public static XMLStreamReader streamReaderChain(XMLStreamReader reader, StreamFilter... filters) throws XMLStreamException {
-        return streamReaderChain(reader, Arrays.asList(filters));
+    public static XMLStreamReader filter(XMLInputFactory xif, XMLStreamReader reader, StreamFilter... filters) throws XMLStreamException {
+        return filter(xif, reader, Arrays.asList(filters));
     }
 
     public static void toCharstream(Source source, Writer writer) throws SAXException, TransformerException {

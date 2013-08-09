@@ -23,11 +23,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import eu.interedition.text.Annotation;
-import eu.interedition.text.AnnotationTarget;
-import eu.interedition.text.repository.Store;
-import eu.interedition.text.xml.AnnotationWriter;
+import eu.interedition.text.xml.AnnotationGenerator;
 import eu.interedition.text.xml.NamespaceMapping;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -43,7 +39,7 @@ import java.util.Map;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class MilestoneAnnotationWriter extends AnnotationWriter {
+public class MilestoneAnnotationGenerator extends AnnotationGenerator {
 
     private static final Map<String, String> MILESTONE_ELEMENT_UNITS = Maps.newHashMap();
 
@@ -60,22 +56,15 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
     private static final String SPAN_TO_ATTR_NAME = "spanTo";
     private static final String ID_ATTR_NAME = "id";
 
-    private final long text;
-    private final Iterator<Long> annotationIds;
-    private final ObjectMapper objectMapper;
-
     private final Deque<Boolean> handledElements = new ArrayDeque<Boolean>();
-    private final Multimap<String, Annotation> spanning = ArrayListMultimap.create();
-    private final Map<String, Annotation> milestones = Maps.newHashMap();
+    private final Multimap<String, ObjectNode> spanning = ArrayListMultimap.create();
+    private final Multimap<String, Integer> spanningStarts = ArrayListMultimap.create();
+    private final Map<String, ObjectNode> milestones = Maps.newHashMap();
     private final Map<String, Integer> milestoneStarts = Maps.newHashMap();
 
-    public MilestoneAnnotationWriter(Store texts, long text, Iterator<Long> annotationIds) {
-        super(texts);
-        this.text = text;
-        this.annotationIds = annotationIds;
-        this.objectMapper = texts.objectMapper();
+    public MilestoneAnnotationGenerator(ObjectMapper objectMapper) {
+        super(objectMapper);
     }
-
 
     @Override
     public boolean accept(XMLStreamReader reader) {
@@ -96,18 +85,14 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
         return true;
     }
 
-
     @Override
-    public void flush() {
-        final int offset = extractor().offset();
-        for (Map.Entry<String, Annotation> milestone : milestones.entrySet()) {
+    public void end() {
+        for (Map.Entry<String, ObjectNode> milestone : milestones.entrySet()) {
             final Integer start = milestoneStarts.remove(milestone.getKey());
             if (start != null) {
-                final Annotation last = milestone.getValue();
-                write(new Annotation(last.id(), new AnnotationTarget(text, start, offset), last.data()));
+                converter().annotationEnds(start, milestone.getValue());
             }
         }
-        super.flush();
     }
 
     boolean handleMilestoneElements(XMLStreamReader reader, QName elementName) {
@@ -133,11 +118,10 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
             return false;
         }
 
-        final int offset = extractor().offset();
-        final Annotation last = milestones.remove(milestoneUnit);
+        final ObjectNode last = milestones.remove(milestoneUnit);
         final Integer start = milestoneStarts.remove(milestoneUnit);
         if (last != null && start != null) {
-            write(new Annotation(last.id(), new AnnotationTarget(text, start, offset), last.data()));
+            converter().annotationEnds(start, last);
         }
 
         final ObjectNode attributes = objectMapper.createObjectNode();
@@ -147,17 +131,17 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
             if ((ns.isEmpty() || NamespaceMapping.TEI_NS_URI.equals(ns)) && MILESTONE_UNIT_ATTR_NAME.equals(name.getLocalPart())) {
                 continue;
             }
-            attributes.put(extractor().name(name), reader.getAttributeValue(a));
+            attributes.put(converter().name(name), reader.getAttributeValue(a));
         }
         final ObjectNode data = objectMapper.createObjectNode();
-        data.put(extractor().name(XML_ELEMENT_NAME), extractor().name(new QName(NamespaceMapping.TEI_NS_URI, milestoneUnit)));
+        data.put(converter().name(XML_ELEMENT_NAME), converter().name(new QName(NamespaceMapping.TEI_NS_URI, milestoneUnit)));
         if (attributes.size() > 0) {
-            data.put(extractor().name(XML_ELEMENT_ATTRS), attributes);
+            data.put(converter().name(XML_ELEMENT_ATTRS), attributes);
         }
 
-        milestones.put(milestoneUnit, new Annotation(annotationIds.next(), Sets.<AnnotationTarget>newTreeSet(), data));
-        milestoneStarts.put(milestoneUnit, offset);
-
+        milestones.put(milestoneUnit, data);
+        milestoneStarts.put(milestoneUnit, converter().offset());
+        converter().annotationsStarts(data);
         return true;
     }
 
@@ -182,28 +166,25 @@ public class MilestoneAnnotationWriter extends AnnotationWriter {
                 if ((ns.isEmpty() || NamespaceMapping.TEI_NS_URI.equals(ns)) && SPAN_TO_ATTR_NAME.equals(name.getLocalPart())) {
                     continue;
                 }
-                attributes.put(extractor().name(name), reader.getAttributeValue(a));
+                attributes.put(converter().name(name), reader.getAttributeValue(a));
             }
             final ObjectNode data = objectMapper.createObjectNode();
-            data.put(extractor().name(XML_ELEMENT_NAME), extractor().name(new QName(
+            data.put(converter().name(XML_ELEMENT_NAME), converter().name(new QName(
                     NamespaceMapping.TEI_NS_URI,
                     elementName.getLocalPart().replaceAll("Span$", "")
             )));
             if (attributes.size() > 0) {
-                data.put(extractor().name(XML_ELEMENT_ATTRS), attributes);
+                data.put(converter().name(XML_ELEMENT_ATTRS), attributes);
             }
 
-            final int offset = extractor().offset();
-            spanning.put(spanTo, new Annotation(annotationIds.next(), new AnnotationTarget(text, offset, offset), data));
+            spanning.put(spanTo, data);
+            spanningStarts.put(spanTo, converter().offset());
         }
         if (refId != null) {
-            for (Annotation annotation : spanning.removeAll(refId)) {
-                final int offset = extractor().offset();
-                write(new Annotation(
-                        annotation.id(),
-                        new AnnotationTarget(text, annotation.targets().first().start(), offset),
-                        annotation.data()
-                ));
+            Iterator<ObjectNode> dataIt = spanning.removeAll(refId).iterator();
+            Iterator<Integer> startIt = spanningStarts.removeAll(refId).iterator();
+            while(dataIt.hasNext() && startIt.hasNext()) {
+                converter().annotationEnds(startIt.next(), dataIt.next());
             }
         }
         return (spanTo != null);

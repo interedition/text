@@ -29,19 +29,18 @@ import java.util.logging.Logger;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class OffsetMapper extends TextExtractorComponent {
+public class OffsetMapper extends ConversionFilter {
     private static final Logger LOG = Logger.getLogger(OffsetMapper.class.getName());
 
-    private int sourceOffset = 0;
-    private Range<Integer> sourceOffsetRange = Range.closedOpen(0, 0);
-    private Range<Integer> textOffsetRange = Range.closedOpen(0, 0);
+    private int sourceOffset;
+    private Range<Integer> sourceOffsetRange;
+    private Range<Integer> textOffsetRange;
 
-    public OffsetMapper reset(TextExtractor extractor) {
-        this.extractor = extractor;
+    @Override
+    public void start() {
         this.sourceOffset = 0;
         this.sourceOffsetRange = Range.closedOpen(0, 0);
         this.textOffsetRange = Range.closedOpen(0, 0);
-        return this;
     }
 
     @Override
@@ -91,7 +90,7 @@ public class OffsetMapper extends TextExtractorComponent {
                 LOG.finer("New offset mapping: text = " + textOffsetRange + "==> source += " + sourceOffsetRange);
             }
 
-            extractor().map(sourceOffsetRange, textOffsetRange);
+            converter().map(sourceOffsetRange, textOffsetRange);
         }
     }
 }

@@ -19,45 +19,41 @@
 
 package eu.interedition.text.xml;
 
-import javax.xml.stream.StreamFilter;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class NodePath extends LinkedList<Integer> implements StreamFilter {
+public class NodePath extends ConversionFilter {
 
-    public NodePath reset() {
-        clear();
-        add(1);
-        return this;
+
+    @Override
+    public void start() {
+        final LinkedList<Integer> nodePath = converter().nodePath();
+        nodePath.clear();
+        nodePath.add(1);
     }
 
     @Override
-    public boolean accept(XMLStreamReader reader) {
+    protected void onXMLEvent(XMLStreamReader reader) {
+        final LinkedList<Integer> nodePath = converter().nodePath();
         switch (reader.getEventType()) {
             case XMLStreamConstants.START_ELEMENT:
-                add(removeLast() + 1);
-                add(1);
+                nodePath.add(nodePath.removeLast() + 1);
+                nodePath.add(1);
                 break;
             case XMLStreamConstants.END_ELEMENT:
-                removeLast();
+                nodePath.removeLast();
                 break;
             case XMLStreamConstants.CDATA:
             case XMLStreamConstants.CHARACTERS:
             case XMLStreamConstants.COMMENT:
             case XMLStreamConstants.PROCESSING_INSTRUCTION:
             case XMLStreamConstants.SPACE:
-                add(removeLast() + 1);
+                nodePath.add(nodePath.removeLast() + 1);
                 break;
         }
-        return true;
-    }
-
-    public List<Integer> elementPath() {
-        return subList(0, size() - 1);
     }
 }

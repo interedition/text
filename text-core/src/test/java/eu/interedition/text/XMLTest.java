@@ -19,18 +19,17 @@
 
 package eu.interedition.text;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import eu.interedition.text.repository.SqlRepository;
-import eu.interedition.text.repository.Store;
-import eu.interedition.text.repository.Stores;
 import eu.interedition.text.util.Database;
-import eu.interedition.text.xml.AnnotationWriter;
-import eu.interedition.text.xml.ContainerElementContext;
-import eu.interedition.text.xml.ContextualStreamFilter;
+import eu.interedition.text.xml.AnnotationGenerator;
+import eu.interedition.text.xml.FilterContext;
+import eu.interedition.text.xml.WhitespaceStrippingContext;
+import eu.interedition.text.xml.Converter;
+import eu.interedition.text.xml.ConverterBuilder;
 import eu.interedition.text.xml.LineBreaker;
 import eu.interedition.text.xml.NamespaceMapping;
-import eu.interedition.text.xml.TextExtractor;
+import eu.interedition.text.xml.TextGenerator;
 import eu.interedition.text.xml.XML;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.stax2.XMLInputFactory2;
@@ -38,9 +37,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.sql.DataSource;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import java.io.IOException;
 import java.sql.SQLException;
 
 /**
@@ -50,10 +47,23 @@ public class XMLTest {
 
     protected static DataSource dataSource;
     protected static Repository repository;
+    protected static ObjectMapper objectMapper;
+    protected static ConverterBuilder converterBuilder;
 
     @BeforeClass
     public static void init() throws SQLException {
-        repository = new SqlRepository(dataSource = Database.h2(), new ObjectMapper()).withSchema();
+        objectMapper = new ObjectMapper();
+        repository = new SqlRepository(dataSource = Database.h2(), objectMapper).withSchema();
+        converterBuilder = Converter.builder()
+                .withWhitespaceCompression(new WhitespaceStrippingContext.ElementNameBased(Sets.newHashSet("div")))
+                .withNamespaceMapping(new NamespaceMapping())
+                .filter(new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg", "sp", "speaker")))
+                .filter(new FilterContext.ElementNameBased(
+                        Sets.newHashSet("text"),
+                        Sets.newHashSet("TEI.2", "back", "front", "note", "figure")
+                ))
+                .filter(new AnnotationGenerator.Elements(objectMapper))
+                .filter(new TextGenerator());
     }
 
     @Test
@@ -70,30 +80,7 @@ public class XMLTest {
         final XMLInputFactory2 xif = XML.createXMLInputFactory();
         XMLStreamReader reader = null;
         try {
-            final XMLStreamReader xml = reader = xif.createXMLStreamReader(getClass().getResource(resource));
-            reader = repository.execute(new Repository.Transaction<XMLStreamReader>() {
-                @Override
-                public XMLStreamReader transactional(Store store) {
-                    try {
-                        final long id = repository.textIds().next();
-                        return Stores.xml(store, id, xif, xml,
-                                new TextExtractor().withWhitespaceCompression(new ContainerElementContext.ElementNameBased(
-                                        Sets.newHashSet("div")
-                                )).withNamespaceMapping(new NamespaceMapping()),
-                                new LineBreaker.ElementNamedBased(Sets.newHashSet("p", "div", "l", "lg", "sp", "speaker")),
-                                new ContextualStreamFilter.ElementNameBased(
-                                        Sets.newHashSet("text"),
-                                        Sets.newHashSet("TEI.2", "back", "front", "note", "figure")
-                                ),
-                                new AnnotationWriter.Elements(store, id, repository.annotationIds())
-                        );
-                    } catch (IOException e) {
-                        throw Throwables.propagate(e);
-                    } catch (XMLStreamException e) {
-                        throw Throwables.propagate(e);
-                    }
-                }
-            });
+            Texts.xml(converterBuilder, repository, xif, reader = xif.createXMLStreamReader(getClass().getResource(resource)));
         } finally {
             XML.closeQuietly(reader);
         }

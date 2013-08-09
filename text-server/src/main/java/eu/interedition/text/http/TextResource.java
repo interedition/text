@@ -27,7 +27,7 @@ import eu.interedition.text.http.io.Templates;
 import eu.interedition.text.Annotation;
 import eu.interedition.text.Segment;
 import eu.interedition.text.repository.Store;
-import eu.interedition.text.repository.Stores;
+import eu.interedition.text.Texts;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 
@@ -78,7 +78,7 @@ public class TextResource {
                         view.put("id", id);
                         view.put("length", length);
                         view.put("segment", writer.writeValueAsString(textSegment));
-                        view.put("text", Stores.toString(store, id, textSegment));
+                        view.put("text", Texts.toString(store, id, textSegment));
                         view.put("annotations", writer.writeValueAsString(store.annotations(id, textSegment, new Store.AnnotationsCallback<List<Annotation>>() {
                             @Override
                             public List<Annotation> annotations(Iterator<Annotation> annotations) {

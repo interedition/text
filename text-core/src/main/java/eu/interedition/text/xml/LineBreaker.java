@@ -25,13 +25,13 @@ import java.util.Set;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public abstract class LineBreaker extends TextExtractorComponent {
+public abstract class LineBreaker extends ConversionFilter {
 
 
     @Override
     protected void onXMLEvent(XMLStreamReader reader) {
         if (breakLine(reader)) {
-            extractor().insert("\n");
+            converter().insert("\n");
         }
     }
 
@@ -47,7 +47,7 @@ public abstract class LineBreaker extends TextExtractorComponent {
 
         @Override
         protected boolean breakLine(XMLStreamReader reader) {
-            return (reader.isStartElement() && extractor().offset() > 0 && lineElements.contains(reader.getLocalName()));
+            return (reader.isStartElement() && converter().offset() > 0 && lineElements.contains(reader.getLocalName()));
         }
     }
 }
