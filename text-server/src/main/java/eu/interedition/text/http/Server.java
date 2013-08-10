@@ -4,7 +4,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
@@ -16,9 +15,7 @@ import dagger.Module;
 import dagger.ObjectGraph;
 import dagger.Provides;
 import eu.interedition.text.Repository;
-import eu.interedition.text.repository.MemoryRepository;
-import eu.interedition.text.repository.MemoryStore;
-import eu.interedition.text.repository.SqlRepository;
+import eu.interedition.text.repository.JdbcRepository;
 import eu.interedition.text.util.Database;
 import eu.interedition.text.util.TextModule;
 import org.apache.commons.cli.CommandLine;
@@ -32,7 +29,6 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -111,7 +107,8 @@ public class Server implements Runnable {
     @Singleton
     @Provides
     public Repository repository(DataSource dataSource, ObjectMapper objectMapper) {
-        return new SqlRepository(dataSource, objectMapper); //new MemoryRepository(new MemoryStore(objectMapper));
+        //return new MemoryRepository(new MemoryStore(objectMapper));
+        return new JdbcRepository(dataSource, objectMapper);
     }
 
     @Provides
