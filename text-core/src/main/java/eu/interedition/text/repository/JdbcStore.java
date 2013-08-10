@@ -50,7 +50,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -59,7 +58,7 @@ import java.util.TreeSet;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SqlStore implements Store {
+public class JdbcStore implements Store {
 
     private final Connection connection;
     private final ObjectMapper objectMapper;
@@ -73,14 +72,15 @@ public class SqlStore implements Store {
     private PreparedStatement deleteTexts;
     private PreparedStatement deleteAnnotations;
 
-    List<Long> addedTexts = Lists.newLinkedList();
-    List<Long> addedAnnotations = Lists.newLinkedList();
-    List<Long> removedTexts = Lists.newLinkedList();
-    List<Long> removedAnnotations = Lists.newLinkedList();
+    private final TransactionLog txLog = new TransactionLog();
 
-    public SqlStore(Connection connection, ObjectMapper objectMapper) {
+    public JdbcStore(Connection connection, ObjectMapper objectMapper) {
         this.connection = connection;
         this.objectMapper = objectMapper;
+    }
+
+    public TransactionLog txLog() {
+        return txLog;
     }
 
     public void close() {
@@ -194,8 +194,7 @@ public class SqlStore implements Store {
 
             textClob.free();
 
-            addedTexts.add(id);
-            removedTexts.remove(id);
+            txLog.textsAdded(id);
             return result;
         } catch (SQLException e) {
             throw Throwables.propagate(e);
@@ -211,7 +210,7 @@ public class SqlStore implements Store {
         }
         ResultSet rs = null;
         try {
-            final Object[] idArray = Iterables.toArray(ids, Object.class);
+            final Long[] idArray = Iterables.toArray(ids, Long.class);
             final List<Long> annotationIds = Lists.newLinkedList();
 
             if (selectAnnotationsByTexts == null) {
@@ -231,8 +230,7 @@ public class SqlStore implements Store {
             deleteTexts.setObject(1, idArray);
             deleteTexts.executeUpdate();
 
-            Iterables.removeAll(addedTexts, Arrays.asList(idArray));
-            Iterables.addAll(removedTexts, ids);
+            txLog.textsRemoved(idArray);
         } catch (SQLException e) {
             throw Throwables.propagate(e);
         }  finally {
@@ -247,15 +245,14 @@ public class SqlStore implements Store {
         }
 
         try {
-            final Object[] idArray = Iterables.toArray(ids, Object.class);
+            final Long[] idArray = Iterables.toArray(ids, Long.class);
             if (deleteAnnotations == null) {
                 deleteAnnotations = connection.prepareStatement("delete from interedition_annotation where id in (?)");
             }
             deleteAnnotations.setObject(1, idArray);
             deleteAnnotations.executeUpdate();
 
-            Iterables.removeAll(addedAnnotations, Arrays.asList(idArray));
-            Iterables.addAll(removedAnnotations, ids);
+            txLog.annotationsRemoved(idArray);
         } catch (SQLException e) {
             throw Throwables.propagate(e);
         }
@@ -378,7 +375,7 @@ public class SqlStore implements Store {
                     insertTarget.addBatch();
                 }
 
-                addedAnnotations.add(id);
+                txLog.annotationsAdded(id);
             }
             insertAnnotation.executeBatch();
             insertTarget.executeBatch();
@@ -390,7 +387,7 @@ public class SqlStore implements Store {
     }
 
 
-    SqlStore writeSchema() {
+    JdbcStore writeSchema() {
         final Closer closer = Closer.create();
         try {
             restore(closer.register(new InputStreamReader(

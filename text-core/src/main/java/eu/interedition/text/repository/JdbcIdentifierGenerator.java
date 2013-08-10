@@ -34,24 +34,24 @@ import java.util.Iterator;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class SqlIdentifierGenerator implements Iterator<Long> {
+public class JdbcIdentifierGenerator implements Iterator<Long> {
 
     private final DataSource dataSource;
     private final String sequence;
     private final long low;
     private long next = -1;
 
-    private SqlIdentifierGenerator(DataSource dataSource, String sequence, long low) {
+    private JdbcIdentifierGenerator(DataSource dataSource, String sequence, long low) {
         this.dataSource = dataSource;
         this.sequence = sequence;
         this.low = low;
     }
 
-    public SqlIdentifierGenerator(DataSource dataSource, String sequence) {
+    public JdbcIdentifierGenerator(DataSource dataSource, String sequence) {
         this(dataSource, sequence, 1024);
     }
 
-    public SqlIdentifierGenerator withSchema() {
+    public JdbcIdentifierGenerator withSchema() {
         Connection connection = null;
         Statement stmt = null;
         try {

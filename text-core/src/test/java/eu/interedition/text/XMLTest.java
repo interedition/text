@@ -20,7 +20,7 @@
 package eu.interedition.text;
 
 import com.google.common.collect.Sets;
-import eu.interedition.text.repository.SqlRepository;
+import eu.interedition.text.repository.JdbcRepository;
 import eu.interedition.text.util.Database;
 import eu.interedition.text.xml.AnnotationGenerator;
 import eu.interedition.text.xml.FilterContext;
@@ -53,7 +53,7 @@ public class XMLTest {
     @BeforeClass
     public static void init() throws SQLException {
         objectMapper = new ObjectMapper();
-        repository = new SqlRepository(dataSource = Database.h2(), objectMapper).withSchema();
+        repository = new JdbcRepository(dataSource = Database.h2(), objectMapper).withSchema();
         converterBuilder = Converter.builder()
                 .withWhitespaceCompression(new WhitespaceStrippingContext.ElementNameBased(Sets.newHashSet("div")))
                 .withNamespaceMapping(new NamespaceMapping())

@@ -23,4 +23,15 @@ public interface Repository {
             return false;
         }
     }
+
+    /**
+     * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
+     */
+    interface Listener {
+
+        void added(Long[] texts, Long[] annotations);
+
+        void removed(Long[] texts, Long[] annotations);
+
+    }
 }

@@ -41,17 +41,6 @@ public interface Store {
     ObjectMapper objectMapper();
 
     /**
-     * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
-     */
-    interface Listener {
-
-        void added(Iterable<Long> texts, Iterable<Long> annotations);
-
-        void removed(Iterable<Long> texts, Iterable<Long> annotations);
-
-    }
-
-    /**
     * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
     */
     interface TextCallback {

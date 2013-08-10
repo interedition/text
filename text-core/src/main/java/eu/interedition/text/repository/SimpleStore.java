@@ -29,7 +29,7 @@ import java.util.SortedSet;
 /**
  * @author <a href="http://gregor.middell.net/" title="Homepage">Gregor Middell</a>
  */
-public class MemoryStore implements Store {
+public class SimpleStore implements Store {
 
     private final Map<Long, String> texts = Maps.newHashMap();
     private final Map<Long, Annotation> annotations = Maps.newHashMap();
@@ -37,8 +37,14 @@ public class MemoryStore implements Store {
     private final SetMultimap<Long, Long> text2annotations = HashMultimap.create();
     private final ObjectMapper objectMapper;
 
-    public MemoryStore(ObjectMapper objectMapper) {
+    private final TransactionLog txLog = new TransactionLog();
+
+    public SimpleStore(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+    }
+
+    public TransactionLog txLog() {
+        return txLog;
     }
 
     @Override
@@ -52,6 +58,7 @@ public class MemoryStore implements Store {
             final StringWriter stringWriter = new StringWriter();
             final R result = writer.write(stringWriter);
             texts.put(id, stringWriter.toString());
+            txLog.textsAdded(id);
             return result;
         } catch (IOException e) {
             throw Throwables.propagate(e);
@@ -129,6 +136,7 @@ public class MemoryStore implements Store {
             for (AnnotationTarget target : annotation.targets()) {
                 this.text2annotations.put(target.text(), id);
             }
+            txLog.annotationsAdded(id);
         }
     }
 
@@ -136,6 +144,7 @@ public class MemoryStore implements Store {
     public void deleteTexts(Iterable<Long> ids) {
         for (Long id : ids) {
             texts.remove(id);
+            txLog.textsRemoved(id);
             deleteAnnotations(text2annotations.get(id));
         }
     }
@@ -144,6 +153,7 @@ public class MemoryStore implements Store {
     public void deleteAnnotations(Iterable<Long> ids) {
         for (Long id : ids) {
             annotations.remove(id);
+            txLog.annotationsRemoved(id);
         }
     }
 
