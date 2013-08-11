@@ -79,7 +79,7 @@ public class TextResource {
                         view.put("length", length);
                         view.put("segment", writer.writeValueAsString(textSegment));
                         view.put("text", Texts.toString(store, id, textSegment));
-                        view.put("annotations", writer.writeValueAsString(store.annotations(id, textSegment, new Store.AnnotationsCallback<List<Annotation>>() {
+                        view.put("annotations", writer.writeValueAsString(store.textAnnotations(id, textSegment, new Store.AnnotationsCallback<List<Annotation>>() {
                             @Override
                             public List<Annotation> annotations(Iterator<Annotation> annotations) {
                                 return Lists.newArrayList(annotations);

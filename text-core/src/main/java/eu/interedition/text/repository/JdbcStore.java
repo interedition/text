@@ -50,6 +50,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -65,6 +66,7 @@ public class JdbcStore implements Store {
 
     private PreparedStatement selectTexts;
     private PreparedStatement selectAnnotations;
+    private PreparedStatement selectTextAnnotations;
     private PreparedStatement selectAnnotationsByTexts;
     private PreparedStatement insertText;
     private PreparedStatement insertAnnotation;
@@ -89,8 +91,9 @@ public class JdbcStore implements Store {
         Database.closeQuietly(insertTarget);
         Database.closeQuietly(insertAnnotation);
         Database.closeQuietly(insertText);
-        Database.closeQuietly(selectAnnotations);
+        Database.closeQuietly(selectTextAnnotations);
         Database.closeQuietly(selectAnnotationsByTexts);
+        Database.closeQuietly(selectAnnotations);
         Database.closeQuietly(selectTexts);
     }
 
@@ -214,7 +217,9 @@ public class JdbcStore implements Store {
             final List<Long> annotationIds = Lists.newLinkedList();
 
             if (selectAnnotationsByTexts == null) {
-                selectAnnotationsByTexts = connection.prepareStatement("select distinct annotation_id from interedition_text_annotation_target where text_id in (?)");
+                selectAnnotationsByTexts = connection.prepareStatement("select distinct at.annotation_id " +
+                        "from table(id bigint = ?) text " +
+                        "join interedition_text_annotation_target at on text.id = at.text_id");
             }
             selectAnnotationsByTexts.setObject(1, idArray);
             rs = selectAnnotationsByTexts.executeQuery();
@@ -225,7 +230,8 @@ public class JdbcStore implements Store {
             deleteAnnotations(annotationIds);
 
             if (deleteTexts == null) {
-                deleteTexts = connection.prepareStatement("delete from interedition_text where id in (?)");
+                deleteTexts = connection.prepareStatement("delete from interedition_text where id in " +
+                        "(select id from table(id bigint = ?) text)");
             }
             deleteTexts.setObject(1, idArray);
             deleteTexts.executeUpdate();
@@ -247,7 +253,8 @@ public class JdbcStore implements Store {
         try {
             final Long[] idArray = Iterables.toArray(ids, Long.class);
             if (deleteAnnotations == null) {
-                deleteAnnotations = connection.prepareStatement("delete from interedition_annotation where id in (?)");
+                deleteAnnotations = connection.prepareStatement("delete from interedition_text_annotation a where a.id in " +
+                        "(select id from table(id bigint = ?) ids)");
             }
             deleteAnnotations.setObject(1, idArray);
             deleteAnnotations.executeUpdate();
@@ -260,16 +267,42 @@ public class JdbcStore implements Store {
     }
 
     @Override
-    public <R> R annotations(long text, AnnotationsCallback<R> cb) {
-        return annotations(text, null, cb);
-    }
-
-    @Override
-    public <R> R annotations(long text, Segment segment, AnnotationsCallback<R> cb) {
-        ResultSet resultSet = null;
+    public <R> R annotations(AnnotationsCallback<R> cb, Iterable<Long> ids) {
         try {
             if (selectAnnotations == null) {
                 selectAnnotations = connection.prepareStatement("select " +
+                        "a.id, a.anno_data, at.text_id, at.range_start, at.range_end " +
+                        "from table(id bigint = ?) ai " +
+                        "join interedition_text_annotation a on ai.id = a.id " +
+                        "left join interedition_text_annotation_target at on a.id = at.annotation_id " +
+                        "order by a.id asc, at.text_id asc, at.range_start asc, at.range_end desc"
+                );
+            }
+
+            selectAnnotations.setObject(1, Iterables.toArray(ids, Long.class));
+
+            return withAnnotationQuery(selectAnnotations, cb);
+        } catch (SQLException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    @Override
+    public <R> R annotations(AnnotationsCallback<R> cb, Long... ids) {
+        return annotations(cb, Arrays.asList(ids));
+    }
+
+
+    @Override
+    public <R> R textAnnotations(long text, AnnotationsCallback<R> cb) {
+        return textAnnotations(text, null, cb);
+    }
+
+    @Override
+    public <R> R textAnnotations(long text, Segment segment, AnnotationsCallback<R> cb) {
+        try {
+            if (selectTextAnnotations == null) {
+                selectTextAnnotations = connection.prepareStatement("select " +
                         "a.id, a.anno_data, at.text_id, at.range_start, at.range_end " +
                         "from interedition_text_annotation a " +
                         "join interedition_text_annotation_target q on a.id = q.annotation_id " +
@@ -278,11 +311,20 @@ public class JdbcStore implements Store {
                         "order by a.id asc, at.text_id asc, at.range_start asc, at.range_end desc"
                 );
             }
-            selectAnnotations.setLong(1, text);
-            selectAnnotations.setLong(2, segment == null ? 0 : segment.start());
-            selectAnnotations.setLong(3, segment == null ? Integer.MAX_VALUE : segment.end());
+            selectTextAnnotations.setLong(1, text);
+            selectTextAnnotations.setLong(2, segment == null ? 0 : segment.start());
+            selectTextAnnotations.setLong(3, segment == null ? Integer.MAX_VALUE : segment.end());
 
-            final ResultSet rs = resultSet = selectAnnotations.executeQuery();
+            return withAnnotationQuery(selectTextAnnotations, cb);
+        } catch (SQLException e) {
+            throw Throwables.propagate(e);
+        }
+    }
+
+    protected <R> R withAnnotationQuery(PreparedStatement query, AnnotationsCallback<R> cb) {
+        ResultSet resultSet = null;
+        try {
+            final ResultSet rs = resultSet = query.executeQuery();
             final ObjectReader objectReader = objectMapper.reader();
             return cb.annotations(new AbstractIterator<Annotation>() {
 

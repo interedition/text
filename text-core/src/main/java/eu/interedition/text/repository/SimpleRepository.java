@@ -49,7 +49,7 @@ public class SimpleRepository implements Repository {
     public <R> R execute(Transaction<R> tx) {
         synchronized (store) {
             final R result = tx.transactional(store);
-            store.txLog().notify(listenerExecutorService, listeners).clear();
+            store.txLog().notify(listenerExecutorService, listeners);
             return result;
         }
     }

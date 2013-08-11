@@ -28,9 +28,13 @@ public interface Store {
 
     SortedMap<Segment, String> segments(long id, SortedSet<Segment> segments);
 
-    <R> R annotations(long text, AnnotationsCallback<R> cb);
+    <R> R annotations(AnnotationsCallback<R> cb, Iterable<Long> ids);
 
-    <R> R annotations(long text, Segment segment, AnnotationsCallback<R> cb);
+    <R> R annotations(AnnotationsCallback<R> cb, Long... ids);
+
+    <R> R textAnnotations(long text, AnnotationsCallback<R> cb);
+
+    <R> R textAnnotations(long text, Segment segment, AnnotationsCallback<R> cb);
 
     void annotate(Iterable<Annotation> annotations);
 

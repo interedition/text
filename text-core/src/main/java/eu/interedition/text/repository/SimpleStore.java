@@ -5,6 +5,7 @@ import com.google.common.base.Functions;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.base.Throwables;
+import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -19,6 +20,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -99,7 +101,7 @@ public class SimpleStore implements Store {
     }
 
     @Override
-    public <R> R annotations(long text, AnnotationsCallback<R> cb) {
+    public <R> R textAnnotations(long text, AnnotationsCallback<R> cb) {
         return cb.annotations(Iterables.transform(
                 Objects.firstNonNull(text2annotations.get(text), NO_ANNOTATIONS),
                 annotationResolver
@@ -107,10 +109,34 @@ public class SimpleStore implements Store {
     }
 
     @Override
-    public <R> R annotations(final long text, Segment segment, AnnotationsCallback<R> cb) {
+    public <R> R annotations(AnnotationsCallback<R> cb, final Iterable<Long> ids) {
+        return cb.annotations(new AbstractIterator<Annotation>() {
+
+            final Iterator<Long> idIt = ids.iterator();
+
+            @Override
+            protected Annotation computeNext() {
+                while (idIt.hasNext()) {
+                    final Annotation annotation = annotations.get(idIt.next());
+                    if (annotation != null) {
+                        return annotation;
+                    }
+                }
+                return endOfData();
+            }
+        });
+    }
+
+    @Override
+    public <R> R annotations(AnnotationsCallback<R> cb, Long... ids) {
+        return annotations(cb, Arrays.asList(ids));
+    }
+
+    @Override
+    public <R> R textAnnotations(final long text, Segment segment, AnnotationsCallback<R> cb) {
         final int segmentStart = segment.start();
         final int segmentEnd = segment.end();
-        return cb.annotations(annotations(text, new AnnotationsCallback<Iterator<Annotation>>() {
+        return cb.annotations(textAnnotations(text, new AnnotationsCallback<Iterator<Annotation>>() {
             @Override
             public Iterator<Annotation> annotations(Iterator<Annotation> annotations) {
                 return Iterators.filter(annotations, new Predicate<Annotation>() {
