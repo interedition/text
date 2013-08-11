@@ -21,7 +21,6 @@ package eu.interedition.text.repository;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.MoreExecutors;
 import eu.interedition.text.Repository;
 
 import java.util.Arrays;
@@ -77,15 +76,7 @@ public class TransactionLog {
         addedAnnotations.removeAll(ids);
     }
 
-    public TransactionLog clear() {
-        addedTexts.clear();
-        removedTexts.clear();
-        addedAnnotations.clear();
-        removedAnnotations.clear();
-        return this;
-    }
-
-    public TransactionLog notify(ExecutorService executorService, Iterable<Repository.Listener> listeners) {
+    public synchronized TransactionLog notify(ExecutorService executorService, Iterable<Repository.Listener> listeners) {
         if (!Iterables.isEmpty(listeners)) {
             final boolean added = !(addedAnnotations.isEmpty() && addedTexts.isEmpty());
             final boolean removed = !(removedAnnotations.isEmpty() && removedTexts.isEmpty());
@@ -94,6 +85,10 @@ public class TransactionLog {
                 final Long[] addedAnnotations = this.addedAnnotations.toArray(new Long[this.addedAnnotations.size()]);
                 final Long[] removedTexts = this.removedTexts.toArray(new Long[this.removedTexts.size()]);
                 final Long[] removedAnnotations = this.removedAnnotations.toArray(new Long[this.removedAnnotations.size()]);
+                this.addedTexts.clear();
+                this.removedTexts.clear();
+                this.addedAnnotations.clear();
+                this.removedAnnotations.clear();
                 for (final Repository.Listener listener : listeners) {
                     executorService.submit(new Callable<Void>() {
                         @Override
