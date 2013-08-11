@@ -19,6 +19,7 @@
 
 package eu.interedition.text;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import org.codehaus.jackson.JsonNode;
 
@@ -59,6 +60,11 @@ public class Annotation {
 
     public JsonNode data() {
         return data;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(id).addValue(targets).addValue(data).toString();
     }
 
     private static final AtomicLong MEMORY_ID_GENERATOR = new AtomicLong();
